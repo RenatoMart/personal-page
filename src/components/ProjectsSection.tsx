@@ -18,13 +18,14 @@ const projects = [
   },
   {
     id: 2,
-    title: "Cámara Pro — App Móvil",
-    category: "Proyectos Personales",
-    description: "Aplicación móvil con React Native (Expo) que usa la cámara del dispositivo para medir ángulos en tiempo real mediante sensores de nivel. Usa Reanimated para animaciones GPU y Skia para la capa visual.",
-    tags: ["React Native", "Expo", "Reanimated", "Skia"],
-    accent: "text-primary bg-primary-light",
-    link: "#",
-    github: "https://github.com/RenatoMart/camara-pro-ang",
+    title: 'Cámara ProAng — App Móvil',
+    category: 'Proyectos Personales',
+    description:
+      'Cámara inteligente que procesa la imagen frame a frame usando un modelo entrenado para autoseleccionar la mejor guía de composición visual. Además, incorpora un "Modo Fantasma" para alinear tomas exactas o crear fusiones de doble exposición usando Skia. (Actualmente en desarrollo).',
+    tags: ['React Native', 'Machine Learning', 'Expo', 'Skia', 'VisionCamera'],
+    accent: 'text-primary bg-primary-light',
+    link: '#',
+    github: 'https://github.com/RenatoMart/camara-pro-ang',
   },
   {
     id: 3,

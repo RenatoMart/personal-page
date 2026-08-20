@@ -6,25 +6,25 @@ import { Github, Linkedin } from '@/components/Icons';
 
 // Bubble config: size, position, color, duration — kept subtle but visible
 const BUBBLES = [
-  { w: 80,  h: 80,  top: '12%',  left: '8%',   color: 'rgba(99,102,241,0.18)',  dur: '7.2s', delay: '0s' },
-  { w: 48,  h: 48,  top: '70%',  left: '5%',   color: 'rgba(139,92,246,0.15)',  dur: '9.5s', delay: '1s' },
-  { w: 120, h: 120, top: '20%',  left: '88%',  color: 'rgba(99,102,241,0.12)',  dur: '11s',  delay: '2s' },
-  { w: 36,  h: 36,  top: '80%',  left: '80%',  color: 'rgba(249,115,22,0.15)',  dur: '8.4s', delay: '0.5s' },
-  { w: 64,  h: 64,  top: '50%',  left: '92%',  color: 'rgba(6,182,212,0.14)',   dur: '10.2s', delay: '1.5s' },
-  { w: 28,  h: 28,  top: '35%',  left: '3%',   color: 'rgba(139,92,246,0.20)',  dur: '6.8s', delay: '0.2s' },
-  { w: 56,  h: 56,  top: '88%',  left: '45%',  color: 'rgba(99,102,241,0.14)',  dur: '12s',  delay: '2.5s' },
-  { w: 40,  h: 40,  top: '8%',   left: '55%',  color: 'rgba(249,115,22,0.12)',  dur: '9.0s', delay: '0.8s' },
-  { w: 72,  h: 72,  top: '60%',  left: '60%',  color: 'rgba(6,182,212,0.11)',   dur: '8.8s', delay: '1.2s' },
-  { w: 32,  h: 32,  top: '42%',  left: '75%',  color: 'rgba(99,102,241,0.16)',  dur: '7.6s', delay: '0.6s' },
+  { w: 80, h: 80, top: '12%', left: '8%', color: 'rgba(99,102,241,0.18)', dur: '7.2s', delay: '0s' },
+  { w: 48, h: 48, top: '70%', left: '5%', color: 'rgba(139,92,246,0.15)', dur: '9.5s', delay: '1s' },
+  { w: 120, h: 120, top: '20%', left: '88%', color: 'rgba(99,102,241,0.12)', dur: '11s', delay: '2s' },
+  { w: 36, h: 36, top: '80%', left: '80%', color: 'rgba(249,115,22,0.15)', dur: '8.4s', delay: '0.5s' },
+  { w: 64, h: 64, top: '50%', left: '92%', color: 'rgba(6,182,212,0.14)', dur: '10.2s', delay: '1.5s' },
+  { w: 28, h: 28, top: '35%', left: '3%', color: 'rgba(139,92,246,0.20)', dur: '6.8s', delay: '0.2s' },
+  { w: 56, h: 56, top: '88%', left: '45%', color: 'rgba(99,102,241,0.14)', dur: '12s', delay: '2.5s' },
+  { w: 40, h: 40, top: '8%', left: '55%', color: 'rgba(249,115,22,0.12)', dur: '9.0s', delay: '0.8s' },
+  { w: 72, h: 72, top: '60%', left: '60%', color: 'rgba(6,182,212,0.11)', dur: '8.8s', delay: '1.2s' },
+  { w: 32, h: 32, top: '42%', left: '75%', color: 'rgba(99,102,241,0.16)', dur: '7.6s', delay: '0.6s' },
 ];
 
 export default function HeroSection() {
-  const sectionRef  = useRef<HTMLElement>(null);
-  const badgeRef    = useRef<HTMLDivElement>(null);
-  const line1Ref    = useRef<HTMLDivElement>(null);
-  const line2Ref    = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const badgeRef = useRef<HTMLDivElement>(null);
+  const line1Ref = useRef<HTMLDivElement>(null);
+  const line2Ref = useRef<HTMLDivElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
-  const ctaRef      = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Content entrance (only runs once on mount)
@@ -67,10 +67,10 @@ export default function HeroSection() {
           key={i}
           className="absolute rounded-full pointer-events-none animate-float"
           style={{
-            width:  b.w,
+            width: b.w,
             height: b.h,
-            top:    b.top,
-            left:   b.left,
+            top: b.top,
+            left: b.left,
             backgroundColor: b.color,
             border: `1px solid ${b.color.replace(/,\s*[\d.]+\)$/, ', 0.4)')}`,
             animationDuration: b.dur,
@@ -106,8 +106,7 @@ export default function HeroSection() {
 
         {/* Subtitle */}
         <p ref={subtitleRef} className="opacity-0 text-base md:text-lg text-muted max-w-xl mb-10 leading-relaxed">
-          Construyo software que funciona bien y se ve mejor. Estudiante de informática con
-          experiencia en desarrollo web, gestión de bases de datos y trabajo en equipo ágil.
+          Desarrollador Web y Software enfocado en construir soluciones tecnológicas eficientes. Apasionado por el aprendizaje continuo y por enfrentar desafíos en entornos dinámicos. Comprometido a trabajar con firmeza y dedicación para aportar valor real mediante código limpio y trabajo en equipo.
         </p>
 
         {/* CTAs */}
@@ -132,12 +131,12 @@ export default function HeroSection() {
         {/* Social links */}
         <div className="flex items-center gap-5 text-sm text-muted">
           <a href="https://github.com/RenatoMart" target="_blank" rel="noreferrer"
-             className="flex items-center gap-1.5 hover:text-primary transition-colors">
+            className="flex items-center gap-1.5 hover:text-primary transition-colors">
             <Github className="w-4 h-4" /> RenatoMart
           </a>
           <span className="w-px h-4 bg-border" />
           <a href="https://www.linkedin.com/in/renato-alexander-martinez-aguilar-88a391343/" target="_blank" rel="noreferrer"
-             className="flex items-center gap-1.5 hover:text-primary transition-colors">
+            className="flex items-center gap-1.5 hover:text-primary transition-colors">
             <Linkedin className="w-4 h-4" /> LinkedIn
           </a>
         </div>

@@ -16,7 +16,7 @@ const categories = [
     icon: Database,
     color: "text-accent bg-cyan-50",
     dot: "bg-accent",
-    skills: ["PostgreSQL", "MySQL", "MariaDB"],
+    skills: ["PostgreSQL", "MySQL", "MariaDB", "NoSQL", "BD Multimedia"],
   },
   {
     title: "Metodologías",
