@@ -57,6 +57,26 @@ const projects = [
     link: "#",
     github: "https://github.com/RenatoMart/posture-corrector",
   },
+  {
+    id: 6,
+    title: "Sistema de Asistencia QR — SEDITALKS",
+    category: "Voluntariado",
+    description: "Sistema de control de asistencia mediante códigos QR desarrollado para eventos de SEDIPRO. Cuenta con integración a Google Sheets en tiempo real, modo automático de escaneo, y registro manual. Construido con Python y OpenCV.",
+    tags: ["Python", "OpenCV", "Tkinter", "Google Sheets API"],
+    accent: "text-secondary bg-secondary-light",
+    link: "#",
+    github: "https://github.com/RenatoMart/Seditalks",
+  },
+  {
+    id: 7,
+    title: "Generador de Certificados Semiautomático",
+    category: "Voluntariado",
+    description: "Sistema de escritorio para generar certificados automáticamente a partir de archivos Excel. Cuenta con interfaz gráfica para carga de datos, previsualización de diseños y exportación por lotes. Desarrollado por encargo de la presidencia de SEDIPRO 2025.",
+    tags: ["Python", "Tkinter", "Pandas", "Pillow"],
+    accent: "text-primary bg-primary-light",
+    link: "#",
+    github: "https://github.com/RenatoMart/certificados-semiautomaticos",
+  },
 ];
 
 const categories = ["Todos", "Trabajos Web", "Proyectos Personales", "Voluntariado"];
