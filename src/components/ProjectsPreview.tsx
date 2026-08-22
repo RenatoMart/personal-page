@@ -1,27 +1,25 @@
 'use client';
 import { Github } from '@/components/Icons';
-import { categories, projects } from '@/data/projects';
-import { cn } from '@/utils/cn';
+import { projects } from '@/data/projects';
 import { animate, stagger } from 'animejs';
-import { ExternalLink } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 
-export default function ProjectsSection() {
+const featured = projects.slice(0, 2);
+
+export default function ProjectsPreview() {
 	const sectionRef = useRef<HTMLElement>(null);
-	const [active, setActive] = useState('Todos');
-
-	const filtered =
-		active === 'Todos' ? projects : projects.filter(p => p.category === active);
 
 	useEffect(() => {
 		const observer = new IntersectionObserver(
 			entries => {
 				if (entries[0].isIntersecting) {
-					animate('.proj-card', {
+					animate('.proj-preview-card', {
 						translateY: [40, 0],
 						opacity: [0, 1],
 						duration: 700,
-						delay: stagger(100),
+						delay: stagger(120),
 						ease: 'outExpo',
 					});
 					observer.disconnect();
@@ -33,16 +31,6 @@ export default function ProjectsSection() {
 		return () => observer.disconnect();
 	}, []);
 
-	useEffect(() => {
-		animate('.proj-card', {
-			scale: [0.96, 1],
-			opacity: [0.3, 1],
-			duration: 400,
-			delay: stagger(60),
-			ease: 'outSine',
-		});
-	}, [active]);
-
 	return (
 		<section id='projects' ref={sectionRef} className='px-6 py-28'>
 			<div className='mx-auto max-w-6xl'>
@@ -53,31 +41,22 @@ export default function ProjectsSection() {
 						<h2 className='font-display text-3xl font-bold text-foreground md:text-5xl'>
 							Trabajos &amp; proyectos<span className='text-secondary'>.</span>
 						</h2>
-						<div className='flex flex-wrap gap-2'>
-							{categories.map(cat => (
-								<button
-									key={cat}
-									onClick={() => setActive(cat)}
-									className={cn(
-										'rounded-full border px-4 py-2 text-sm font-medium transition-all',
-										active === cat
-											? 'border-primary bg-primary text-white shadow-glow-primary'
-											: 'border-border bg-white text-muted hover:border-primary/40 hover:text-primary',
-									)}
-								>
-									{cat}
-								</button>
-							))}
-						</div>
+						<Link
+							href='/proyectos'
+							className='group inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary-light px-5 py-2.5 text-sm font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-white'
+						>
+							Ver todos los proyectos
+							<ArrowRight className='h-4 w-4 transition-transform group-hover:translate-x-0.5' />
+						</Link>
 					</div>
 				</div>
 
-				{/* Grid */}
+				{/* Grid — 2 featured */}
 				<div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-					{filtered.map(project => (
+					{featured.map(project => (
 						<div
 							key={project.id}
-							className='proj-card glass-card group flex flex-col overflow-hidden opacity-0'
+							className='proj-preview-card glass-card group flex flex-col overflow-hidden opacity-0'
 						>
 							<div
 								className='h-1.5 w-full opacity-70 transition-opacity group-hover:opacity-100'
@@ -131,6 +110,20 @@ export default function ProjectsSection() {
 							</div>
 						</div>
 					))}
+				</div>
+
+				{/* "See more" nudge */}
+				<div className='mt-10 text-center'>
+					<p className='mb-4 text-sm text-muted'>
+						{projects.length - 2} proyectos más en el portafolio completo
+					</p>
+					<Link
+						href='/proyectos'
+						className='group inline-flex items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline'
+					>
+						Explorar todos
+						<ArrowRight className='h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5' />
+					</Link>
 				</div>
 			</div>
 		</section>

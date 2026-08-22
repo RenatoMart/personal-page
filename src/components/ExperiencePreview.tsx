@@ -2,25 +2,30 @@
 import { Linkedin } from '@/components/Icons';
 import { experiences } from '@/data/experiences';
 import { animate, stagger } from 'animejs';
+import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
-export default function ExperienceSection() {
+// Show the 3 most recent milestones
+const preview = experiences.slice(-3).reverse();
+
+export default function ExperiencePreview() {
 	const sectionRef = useRef<HTMLElement>(null);
 
 	useEffect(() => {
 		const observer = new IntersectionObserver(
 			entries => {
 				if (entries[0].isIntersecting) {
-					animate('.exp-card', {
+					animate('.exp-preview-card', {
 						translateX: [-30, 0],
 						opacity: [0, 1],
 						duration: 750,
 						delay: stagger(140),
 						ease: 'outExpo',
 					});
-					animate('.timeline-fill', {
+					animate('.timeline-preview-fill', {
 						height: ['0%', '100%'],
-						duration: 1800,
+						duration: 1400,
 						ease: 'inOutCubic',
 					});
 					observer.disconnect();
@@ -46,32 +51,30 @@ export default function ExperienceSection() {
 						<h2 className='font-display text-3xl font-bold text-foreground md:text-5xl'>
 							Mi camino hasta aquí<span className='text-primary'>.</span>
 						</h2>
-						<a
-							href='https://www.linkedin.com/in/renato-alexander-martinez-aguilar-88a391343/'
-							target='_blank'
-							rel='noreferrer'
-							className='inline-flex items-center gap-2 self-start rounded-full border border-[#0A66C2]/20 bg-[#0A66C2]/10 px-4 py-2 text-sm font-medium text-[#0A66C2] transition-colors hover:bg-[#0A66C2]/20 md:self-auto'
+						<Link
+							href='/trayectoria'
+							className='group inline-flex items-center gap-2 self-start rounded-full border border-primary/25 bg-primary-light px-5 py-2.5 text-sm font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-white md:self-auto'
 						>
-							<Linkedin className='h-4 w-4' />
-							Ver certificados en LinkedIn
-						</a>
+							Ver trayectoria completa
+							<ArrowRight className='h-4 w-4 transition-transform group-hover:translate-x-0.5' />
+						</Link>
 					</div>
 				</div>
 
-				{/* Timeline */}
+				{/* Timeline (compact) */}
 				<div className='relative pl-10 md:pl-14'>
 					{/* Vertical line */}
 					<div className='absolute bottom-0 left-3 top-0 w-0.5 overflow-hidden rounded-full bg-border md:left-5'>
-						<div className='timeline-fill h-0 w-full origin-top rounded-full bg-gradient-to-b from-primary via-secondary via-violet-400 to-accent' />
+						<div className='timeline-preview-fill h-0 w-full origin-top rounded-full bg-gradient-to-b from-primary via-secondary via-violet-400 to-accent' />
 					</div>
 
 					<div className='space-y-8'>
-						{experiences.map((exp, idx) => {
+						{preview.map((exp, idx) => {
 							const Icon = exp.icon;
 							return (
 								<div
 									key={idx}
-									className='exp-card relative flex gap-6 opacity-0'
+									className='exp-preview-card relative flex gap-6 opacity-0'
 								>
 									{/* Node */}
 									<div
@@ -124,6 +127,20 @@ export default function ExperienceSection() {
 							);
 						})}
 					</div>
+				</div>
+
+				{/* "See more" nudge */}
+				<div className='mt-10 text-center'>
+					<p className='mb-4 text-sm text-muted'>
+						{experiences.length - 3} hitos más en la trayectoria completa
+					</p>
+					<Link
+						href='/trayectoria'
+						className='group inline-flex items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline'
+					>
+						Ver todo el recorrido
+						<ArrowRight className='h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5' />
+					</Link>
 				</div>
 			</div>
 		</section>
