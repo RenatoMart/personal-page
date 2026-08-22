@@ -25,9 +25,9 @@ export default function Navbar() {
 			animate(navRef.current, {
 				translateY: [-60, 0],
 				opacity: [0, 1],
-				duration: 900,
+				duration: 400,
 				ease: 'outExpo',
-				delay: 300,
+				delay: 100,
 			});
 		}
 		const onScroll = () => setScrolled(window.scrollY > 20);

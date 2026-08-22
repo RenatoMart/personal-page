@@ -120,8 +120,8 @@ export default function HeroSection() {
 		animate(els, {
 			translateY: [28, 0],
 			opacity: [0, 1],
-			delay: stagger(110, { start: 300 }),
-			duration: 850,
+			delay: stagger(60, { start: 100 }),
+			duration: 400,
 			ease: 'outExpo',
 		});
 	}, []);

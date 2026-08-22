@@ -14,13 +14,13 @@ export default function ExperienceSection() {
 					animate('.exp-card', {
 						translateX: [-30, 0],
 						opacity: [0, 1],
-						duration: 750,
-						delay: stagger(140),
+						duration: 400,
+						delay: stagger(60),
 						ease: 'outExpo',
 					});
 					animate('.timeline-fill', {
 						height: ['0%', '100%'],
-						duration: 1800,
+						duration: 800,
 						ease: 'inOutCubic',
 					});
 					observer.disconnect();

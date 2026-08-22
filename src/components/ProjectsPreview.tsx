@@ -18,8 +18,8 @@ export default function ProjectsPreview() {
 					animate('.proj-preview-card', {
 						translateY: [40, 0],
 						opacity: [0, 1],
-						duration: 700,
-						delay: stagger(120),
+						duration: 400,
+						delay: stagger(60),
 						ease: 'outExpo',
 					});
 					observer.disconnect();

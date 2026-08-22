@@ -19,13 +19,13 @@ export default function ExperiencePreview() {
 					animate('.exp-preview-card', {
 						translateX: [-30, 0],
 						opacity: [0, 1],
-						duration: 750,
-						delay: stagger(140),
+						duration: 400,
+						delay: stagger(60),
 						ease: 'outExpo',
 					});
 					animate('.timeline-preview-fill', {
 						height: ['0%', '100%'],
-						duration: 1400,
+						duration: 600,
 						ease: 'inOutCubic',
 					});
 					observer.disconnect();

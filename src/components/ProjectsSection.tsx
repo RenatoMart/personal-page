@@ -20,8 +20,8 @@ export default function ProjectsSection() {
 					animate('.proj-card', {
 						translateY: [40, 0],
 						opacity: [0, 1],
-						duration: 700,
-						delay: stagger(100),
+						duration: 400,
+						delay: stagger(60),
 						ease: 'outExpo',
 					});
 					observer.disconnect();
@@ -37,8 +37,8 @@ export default function ProjectsSection() {
 		animate('.proj-card', {
 			scale: [0.96, 1],
 			opacity: [0.3, 1],
-			duration: 400,
-			delay: stagger(60),
+			duration: 250,
+			delay: stagger(30),
 			ease: 'outSine',
 		});
 	}, [active]);
