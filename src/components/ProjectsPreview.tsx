@@ -1,15 +1,18 @@
 'use client';
 import { Github } from '@/components/Icons';
-import { projects } from '@/data/projects';
+import type { PreviewProject } from '@/lib/preview-api';
 import { animate, stagger } from 'animejs';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
-const featured = projects.slice(0, 2);
-
-export default function ProjectsPreview() {
+export default function ProjectsPreview({
+	projects,
+}: {
+	projects: PreviewProject[];
+}) {
 	const sectionRef = useRef<HTMLElement>(null);
+	const featured = projects.slice(0, 2);
 
 	useEffect(() => {
 		const observer = new IntersectionObserver(
@@ -55,19 +58,25 @@ export default function ProjectsPreview() {
 				<div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
 					{featured.map(project => (
 						<div
-							key={project.id}
+							key={project.slug}
 							className='proj-preview-card glass-card group flex flex-col overflow-hidden opacity-0'
 						>
-							<div
-								className='h-1.5 w-full opacity-70 transition-opacity group-hover:opacity-100'
-								style={{
-									background:
-										'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #F97316 100%)',
-								}}
+							<img
+								src={project.previewUrl}
+								alt={project.title}
+								loading='lazy'
+								className='aspect-[1200/630] w-full bg-neutral-900 object-contain'
 							/>
 							<div className='flex flex-1 flex-col p-8'>
 								<div className='mb-4 flex items-center justify-between'>
-									<span className={`pill border text-xs ${project.accent}`}>
+									<span
+										className='pill border text-xs'
+										style={{
+											color: project.accent,
+											backgroundColor: `${project.accent}1a`,
+											borderColor: `${project.accent}40`,
+										}}
+									>
 										{project.category}
 									</span>
 								</div>
@@ -89,16 +98,16 @@ export default function ProjectsPreview() {
 								</div>
 								<div className='flex items-center gap-4 border-t border-border pt-4'>
 									<a
-										href={project.github}
+										href={project.repoUrl}
 										target='_blank'
 										rel='noreferrer'
 										className='flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-primary'
 									>
 										<Github className='h-4 w-4' /> GitHub
 									</a>
-									{project.link !== '#' && (
+									{project.liveUrl && (
 										<a
-											href={project.link}
+											href={project.liveUrl}
 											target='_blank'
 											rel='noreferrer'
 											className='flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-primary'
