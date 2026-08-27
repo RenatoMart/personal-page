@@ -1,3 +1,8 @@
+export interface PreviewImage {
+	url: string;
+	alt: string;
+}
+
 export interface PreviewProject {
 	slug: string;
 	title: string;
@@ -12,6 +17,7 @@ export interface PreviewProject {
 	pushedAt?: string;
 	previewUrl: string;
 	previewSource?: 'screenshot' | 'social' | 'readme' | 'card';
+	images?: PreviewImage[];
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_PREVIEW_API ?? 'http://localhost:8080';

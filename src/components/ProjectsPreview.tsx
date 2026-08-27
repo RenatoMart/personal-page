@@ -1,5 +1,6 @@
 'use client';
 import { Github } from '@/components/Icons';
+import ProjectImageCarousel from '@/components/ProjectImageCarousel';
 import type { PreviewProject } from '@/lib/preview-api';
 import { animate, stagger } from 'animejs';
 import { ArrowRight, ExternalLink } from 'lucide-react';
@@ -61,11 +62,10 @@ export default function ProjectsPreview({
 							key={project.slug}
 							className='proj-preview-card glass-card group flex flex-col overflow-hidden opacity-0'
 						>
-							<img
-								src={project.previewUrl}
-								alt={project.title}
-								loading='lazy'
-								className='aspect-[1200/630] w-full bg-neutral-900 object-contain'
+							<ProjectImageCarousel
+								images={project.images}
+								fallbackUrl={project.previewUrl}
+								title={project.title}
 							/>
 							<div className='flex flex-1 flex-col p-8'>
 								<div className='mb-4 flex items-center justify-between'>

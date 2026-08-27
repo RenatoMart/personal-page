@@ -1,5 +1,6 @@
 'use client';
 import { Github } from '@/components/Icons';
+import ProjectImageCarousel from '@/components/ProjectImageCarousel';
 import type { PreviewProject } from '@/lib/preview-api';
 import { cn } from '@/utils/cn';
 import { animate, stagger } from 'animejs';
@@ -88,11 +89,10 @@ export default function ProjectsSection({
 							key={project.slug}
 							className='proj-card glass-card group flex flex-col overflow-hidden opacity-0'
 						>
-							<img
-								src={project.previewUrl}
-								alt={project.title}
-								loading='lazy'
-								className='aspect-[1200/630] w-full bg-neutral-900 object-contain'
+							<ProjectImageCarousel
+								images={project.images}
+								fallbackUrl={project.previewUrl}
+								title={project.title}
 							/>
 							<div className='flex flex-1 flex-col p-8'>
 								<div className='mb-4 flex items-center justify-between'>
