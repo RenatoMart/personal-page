@@ -1,6 +1,6 @@
 'use client';
 import { animate, stagger } from 'animejs';
-import { Code2, Database, Workflow, Wrench } from 'lucide-react';
+import { Code2, Database, Layers, Workflow, Wrench } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 const categories = [
@@ -9,14 +9,35 @@ const categories = [
 		icon: Code2,
 		color: 'text-primary bg-primary-light',
 		dot: 'bg-primary',
-		skills: ['C++', 'Python', 'JavaScript', 'TypeScript', 'Java', 'SQL'],
+		skills: ['C++', 'Python', 'JavaScript', 'TypeScript', 'Java', 'Go', 'SQL'],
+	},
+	{
+		title: 'Frameworks & Runtime',
+		icon: Layers,
+		color: 'text-emerald-600 bg-emerald-50',
+		dot: 'bg-emerald-500',
+		skills: [
+			'Next.js',
+			'React Native',
+			'NestJS',
+			'Node.js',
+			'WebSockets (Socket.io)',
+			'Prisma ORM',
+		],
 	},
 	{
 		title: 'Bases de Datos',
 		icon: Database,
 		color: 'text-accent bg-cyan-50',
 		dot: 'bg-accent',
-		skills: ['PostgreSQL', 'MySQL', 'MariaDB', 'NoSQL', 'BD Multimedia'],
+		skills: [
+			'PostgreSQL',
+			'MySQL',
+			'MariaDB',
+			'Redis',
+			'NoSQL',
+			'BD Multimedia',
+		],
 	},
 	{
 		title: 'Metodologías',
@@ -33,12 +54,15 @@ const categories = [
 		skills: [
 			'VS Code',
 			'WebStorm',
+			'GoLand',
 			'IntelliJ IDEA',
 			'CLion',
 			'PyCharm',
 			'PhpStorm',
 			'DataGrip',
+			'Docker',
 			'Antigravity',
+			'Claude Code',
 		],
 	},
 ];
@@ -84,7 +108,7 @@ export default function SkillsSection() {
 				</div>
 
 				{/* Cards */}
-				<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4'>
+				<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'>
 					{categories.map((cat, idx) => {
 						const Icon = cat.icon;
 						return (
