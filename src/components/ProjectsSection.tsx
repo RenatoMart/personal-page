@@ -108,7 +108,18 @@ export default function ProjectsSection({
 									</span>
 								</div>
 								<h3 className='mb-3 font-display text-xl font-bold text-foreground transition-colors group-hover:text-primary'>
-									{project.title}
+									{project.liveUrl ? (
+										<a
+											href={project.liveUrl}
+											target='_blank'
+											rel='noreferrer'
+											className='hover:underline'
+										>
+											{project.title}
+										</a>
+									) : (
+										project.title
+									)}
 								</h3>
 								<p className='mb-6 flex-1 text-sm leading-relaxed text-muted'>
 									{project.description}

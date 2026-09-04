@@ -99,32 +99,161 @@ const BUBBLES = [
 	},
 ];
 
+// Bubbles at these indices also burst on their own, on a randomized timer —
+// the rest only pop when clicked. All ten stay clickable either way.
+const AUTO_POP_INDICES = new Set([1, 3, 5, 7, 9]);
+
 export default function HeroSection() {
 	const sectionRef = useRef<HTMLElement>(null);
 	const badgeRef = useRef<HTMLDivElement>(null);
 	const line1Ref = useRef<HTMLDivElement>(null);
-	const line2Ref = useRef<HTMLDivElement>(null);
+	const word1Ref = useRef<HTMLSpanElement>(null);
+	const word2Ref = useRef<HTMLSpanElement>(null);
 	const subtitleRef = useRef<HTMLParagraphElement>(null);
 	const ctaRef = useRef<HTMLDivElement>(null);
+	const bubbleRefs = useRef<(HTMLDivElement | null)[]>([]);
 
 	useEffect(() => {
-		// Content entrance (only runs once on mount)
-		const els = [
-			badgeRef.current,
-			line1Ref.current,
-			line2Ref.current,
-			subtitleRef.current,
-			ctaRef.current,
-		].filter(Boolean);
+		const introEls = [badgeRef.current, line1Ref.current].filter(
+			(el): el is HTMLDivElement => el !== null,
+		);
+		const nameWords = [word1Ref.current, word2Ref.current].filter(
+			(el): el is HTMLSpanElement => el !== null,
+		);
+		const outroEls = [subtitleRef.current, ctaRef.current].filter(
+			(el): el is HTMLParagraphElement | HTMLDivElement => el !== null,
+		);
+		const bubbles = bubbleRefs.current.filter(
+			(el): el is HTMLDivElement => el !== null,
+		);
 
-		animate(els, {
-			translateY: [28, 0],
+		const prefersReducedMotion = window.matchMedia(
+			'(prefers-reduced-motion: reduce)',
+		).matches;
+
+		if (prefersReducedMotion) {
+			// Skip motion entirely: land in the final state instantly, and
+			// don't wire up the pop timers/handlers below.
+			[...introEls, ...nameWords, ...outroEls].forEach(el => {
+				el.style.opacity = '1';
+				el.style.transform = 'none';
+			});
+			bubbles.forEach(el => {
+				el.style.opacity = '1';
+			});
+			return;
+		}
+
+		// Intro: badge + greeting, quiet fade-up.
+		animate(introEls, {
+			translateY: [24, 0],
 			opacity: [0, 1],
-			delay: stagger(60, { start: 100 }),
-			duration: 400,
+			delay: stagger(70, { start: 100 }),
+			duration: 420,
 			ease: 'outExpo',
 		});
+
+		// Signature moment: the name flips up into place word by word, like a
+		// split-flap display settling. Only `transform` (perspective + rotateX,
+		// GPU-composited) and `opacity` are animated — no layout properties —
+		// so this can't trigger a reflow.
+		animate(nameWords, {
+			rotateX: [78, 0],
+			opacity: [0, 1],
+			delay: stagger(150, { start: 220 }),
+			duration: 700,
+			ease: 'outBack',
+		});
+
+		// Outro: subtitle + CTAs follow once the name has mostly settled.
+		animate(outroEls, {
+			translateY: [24, 0],
+			opacity: [0, 1],
+			delay: stagger(90, { start: 820 }),
+			duration: 420,
+			ease: 'outExpo',
+		});
+
+		// Ambient bubbles fade in (opacity only — they already run an infinite
+		// CSS transform loop via animate-float, and a CSS animation always wins
+		// over an inline transform on the same property, so animating
+		// transform/scale here would fight that loop every frame and stutter).
+		animate(bubbles, {
+			opacity: [0, 1],
+			delay: stagger(45, { start: 250 }),
+			duration: 900,
+			ease: 'outSine',
+			onComplete: () => {
+				bubbles.forEach((el, i) => {
+					el.style.willChange = 'transform';
+					if (AUTO_POP_INDICES.has(i)) scheduleAutoPop(el, i);
+				});
+			},
+		});
+
+		// Pending respawn/auto-pop timers, cleared on unmount so a route change
+		// mid-cycle never calls animate() on a detached node.
+		return () => {
+			timeoutsRef.current.forEach(clearTimeout);
+			timeoutsRef.current = [];
+		};
+		// scheduleAutoPop is intentionally omitted: it only closes over
+		// poppingRef/timeoutsRef (stable refs), never stale state, so it's
+		// safe to call without being a dependency — and adding it here would
+		// turn this into a "re-run every render" effect instead of mount-once.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	// --- Bubble pop system -------------------------------------------------
+	// No React state: popping is a purely visual, non-essential flourish, so
+	// it's driven straight through refs + anime.js one-shot tweens. That
+	// keeps it at zero re-render cost no matter how often bubbles pop.
+	// timeoutsRef (not a plain array) so every render's popBubble/
+	// scheduleAutoPop closures push into the same list the effect cleans up.
+	const poppingRef = useRef<Record<number, boolean>>({});
+	const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+	const popBubble = (el: HTMLDivElement, index: number) => {
+		if (poppingRef.current[index]) return;
+		poppingRef.current[index] = true;
+
+		// Hand transform over to anime.js for the duration of the pop: the
+		// CSS float loop and a JS-driven scale would otherwise both write to
+		// `transform` on the same element every frame and fight each other.
+		el.classList.remove('animate-float');
+
+		animate(el, {
+			scale: [1, 1.7],
+			opacity: [1, 0],
+			duration: 380,
+			ease: 'outQuad',
+			onComplete: () => {
+				const respawnDelay = 2200 + Math.random() * 2600;
+				const t = setTimeout(() => {
+					animate(el, {
+						scale: [0.3, 1],
+						opacity: [0, 1],
+						duration: 600,
+						ease: 'outBack',
+						onComplete: () => {
+							el.classList.add('animate-float');
+							poppingRef.current[index] = false;
+							if (AUTO_POP_INDICES.has(index)) scheduleAutoPop(el, index);
+						},
+					});
+				}, respawnDelay);
+				timeoutsRef.current.push(t);
+			},
+		});
+	};
+
+	const scheduleAutoPop = (el: HTMLDivElement, index: number) => {
+		const delay = 4500 + Math.random() * 7000;
+		const t = setTimeout(() => {
+			if (!poppingRef.current[index]) popBubble(el, index);
+		}, delay);
+		timeoutsRef.current.push(t);
+	};
 
 	return (
 		<section
@@ -150,11 +279,19 @@ export default function HeroSection() {
 				}}
 			/>
 
-			{/* === Floating bubbles (mid layer, CSS animation for better performance) === */}
+			{/* === Floating bubbles (mid layer) — click to pop, some also burst on their own === */}
 			{BUBBLES.map((b, i) => (
 				<div
 					key={i}
-					className='pointer-events-none absolute animate-float rounded-full'
+					ref={el => {
+						bubbleRefs.current[i] = el;
+					}}
+					onClick={() => {
+						const el = bubbleRefs.current[i];
+						if (el) popBubble(el, i);
+					}}
+					aria-hidden='true'
+					className='hero-bubble absolute animate-float cursor-pointer rounded-full'
 					style={{
 						width: b.w,
 						height: b.h,
@@ -164,6 +301,7 @@ export default function HeroSection() {
 						border: `1px solid ${b.color.replace(/,\s*[\d.]+\)$/, ', 0.4)')}`,
 						animationDuration: b.dur,
 						animationDelay: b.delay,
+						opacity: 0,
 						willChange: 'transform',
 					}}
 				/>
@@ -187,10 +325,31 @@ export default function HeroSection() {
 					</span>
 				</div>
 
-				{/* Name */}
-				<div ref={line2Ref} className='mb-8 opacity-0'>
+				{/* Name — each word flips up into place independently (see effect) */}
+				<div className='mb-8'>
 					<h1 className='font-display text-5xl font-bold leading-tight tracking-tight text-foreground md:text-6xl lg:text-7xl'>
-						Renato <span className='text-primary'>Martinez</span>
+						<span
+							ref={word1Ref}
+							className='inline-block'
+							style={{
+								transform: 'perspective(700px) rotateX(78deg)',
+								transformOrigin: '50% 100%',
+								opacity: 0,
+							}}
+						>
+							Renato
+						</span>{' '}
+						<span
+							ref={word2Ref}
+							className='inline-block text-primary'
+							style={{
+								transform: 'perspective(700px) rotateX(78deg)',
+								transformOrigin: '50% 100%',
+								opacity: 0,
+							}}
+						>
+							Martinez
+						</span>
 					</h1>
 				</div>
 
