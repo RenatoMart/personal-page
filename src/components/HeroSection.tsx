@@ -2,106 +2,16 @@
 import { Github, Linkedin } from '@/components/Icons';
 import { animate, stagger } from 'animejs';
 import { ArrowRight, Code2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
-// Bubble config: size, position, color, duration — kept subtle but visible
-const BUBBLES = [
-	{
-		w: 80,
-		h: 80,
-		top: '12%',
-		left: '8%',
-		color: 'rgba(99,102,241,0.18)',
-		dur: '7.2s',
-		delay: '0s',
-	},
-	{
-		w: 48,
-		h: 48,
-		top: '70%',
-		left: '5%',
-		color: 'rgba(139,92,246,0.15)',
-		dur: '9.5s',
-		delay: '1s',
-	},
-	{
-		w: 120,
-		h: 120,
-		top: '20%',
-		left: '88%',
-		color: 'rgba(99,102,241,0.12)',
-		dur: '11s',
-		delay: '2s',
-	},
-	{
-		w: 36,
-		h: 36,
-		top: '80%',
-		left: '80%',
-		color: 'rgba(249,115,22,0.15)',
-		dur: '8.4s',
-		delay: '0.5s',
-	},
-	{
-		w: 64,
-		h: 64,
-		top: '50%',
-		left: '92%',
-		color: 'rgba(6,182,212,0.14)',
-		dur: '10.2s',
-		delay: '1.5s',
-	},
-	{
-		w: 28,
-		h: 28,
-		top: '35%',
-		left: '3%',
-		color: 'rgba(139,92,246,0.20)',
-		dur: '6.8s',
-		delay: '0.2s',
-	},
-	{
-		w: 56,
-		h: 56,
-		top: '88%',
-		left: '45%',
-		color: 'rgba(99,102,241,0.14)',
-		dur: '12s',
-		delay: '2.5s',
-	},
-	{
-		w: 40,
-		h: 40,
-		top: '8%',
-		left: '55%',
-		color: 'rgba(249,115,22,0.12)',
-		dur: '9.0s',
-		delay: '0.8s',
-	},
-	{
-		w: 72,
-		h: 72,
-		top: '60%',
-		left: '60%',
-		color: 'rgba(6,182,212,0.11)',
-		dur: '8.8s',
-		delay: '1.2s',
-	},
-	{
-		w: 32,
-		h: 32,
-		top: '42%',
-		left: '75%',
-		color: 'rgba(99,102,241,0.16)',
-		dur: '7.6s',
-		delay: '0.6s',
-	},
-];
-
-// Bubbles at these indices also burst on their own, on a randomized timer —
-// the rest only pop when clicked. All ten stay clickable either way.
-const AUTO_POP_INDICES = new Set([1, 3, 5, 7, 9]);
+// El chunk de three.js (~150KB) se carga aparte, después del contenido
+// principal: la red 3D es puramente ambiental, así que no debe competir
+// por ancho de banda ni bloquear el hidratado del texto/CTAs del hero.
+const HeroNetworkScene = dynamic(() => import('./HeroNetworkScene'), {
+	ssr: false,
+});
 
 export default function HeroSection() {
 	const sectionRef = useRef<HTMLElement>(null);
@@ -111,7 +21,6 @@ export default function HeroSection() {
 	const word2Ref = useRef<HTMLSpanElement>(null);
 	const subtitleRef = useRef<HTMLParagraphElement>(null);
 	const ctaRef = useRef<HTMLDivElement>(null);
-	const bubbleRefs = useRef<(HTMLDivElement | null)[]>([]);
 
 	useEffect(() => {
 		const introEls = [badgeRef.current, line1Ref.current].filter(
@@ -123,23 +32,16 @@ export default function HeroSection() {
 		const outroEls = [subtitleRef.current, ctaRef.current].filter(
 			(el): el is HTMLParagraphElement | HTMLDivElement => el !== null,
 		);
-		const bubbles = bubbleRefs.current.filter(
-			(el): el is HTMLDivElement => el !== null,
-		);
 
 		const prefersReducedMotion = window.matchMedia(
 			'(prefers-reduced-motion: reduce)',
 		).matches;
 
 		if (prefersReducedMotion) {
-			// Skip motion entirely: land in the final state instantly, and
-			// don't wire up the pop timers/handlers below.
+			// Skip motion entirely: land in the final state instantly.
 			[...introEls, ...nameWords, ...outroEls].forEach(el => {
 				el.style.opacity = '1';
 				el.style.transform = 'none';
-			});
-			bubbles.forEach(el => {
-				el.style.opacity = '1';
 			});
 			return;
 		}
@@ -173,87 +75,7 @@ export default function HeroSection() {
 			duration: 420,
 			ease: 'outExpo',
 		});
-
-		// Ambient bubbles fade in (opacity only — they already run an infinite
-		// CSS transform loop via animate-float, and a CSS animation always wins
-		// over an inline transform on the same property, so animating
-		// transform/scale here would fight that loop every frame and stutter).
-		animate(bubbles, {
-			opacity: [0, 1],
-			delay: stagger(45, { start: 250 }),
-			duration: 900,
-			ease: 'outSine',
-			onComplete: () => {
-				bubbles.forEach((el, i) => {
-					el.style.willChange = 'transform';
-					if (AUTO_POP_INDICES.has(i)) scheduleAutoPop(el, i);
-				});
-			},
-		});
-
-		// Pending respawn/auto-pop timers, cleared on unmount so a route change
-		// mid-cycle never calls animate() on a detached node.
-		return () => {
-			timeoutsRef.current.forEach(clearTimeout);
-			timeoutsRef.current = [];
-		};
-		// scheduleAutoPop is intentionally omitted: it only closes over
-		// poppingRef/timeoutsRef (stable refs), never stale state, so it's
-		// safe to call without being a dependency — and adding it here would
-		// turn this into a "re-run every render" effect instead of mount-once.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
-
-	// --- Bubble pop system -------------------------------------------------
-	// No React state: popping is a purely visual, non-essential flourish, so
-	// it's driven straight through refs + anime.js one-shot tweens. That
-	// keeps it at zero re-render cost no matter how often bubbles pop.
-	// timeoutsRef (not a plain array) so every render's popBubble/
-	// scheduleAutoPop closures push into the same list the effect cleans up.
-	const poppingRef = useRef<Record<number, boolean>>({});
-	const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-	const popBubble = (el: HTMLDivElement, index: number) => {
-		if (poppingRef.current[index]) return;
-		poppingRef.current[index] = true;
-
-		// Hand transform over to anime.js for the duration of the pop: the
-		// CSS float loop and a JS-driven scale would otherwise both write to
-		// `transform` on the same element every frame and fight each other.
-		el.classList.remove('animate-float');
-
-		animate(el, {
-			scale: [1, 1.7],
-			opacity: [1, 0],
-			duration: 380,
-			ease: 'outQuad',
-			onComplete: () => {
-				const respawnDelay = 2200 + Math.random() * 2600;
-				const t = setTimeout(() => {
-					animate(el, {
-						scale: [0.3, 1],
-						opacity: [0, 1],
-						duration: 600,
-						ease: 'outBack',
-						onComplete: () => {
-							el.classList.add('animate-float');
-							poppingRef.current[index] = false;
-							if (AUTO_POP_INDICES.has(index)) scheduleAutoPop(el, index);
-						},
-					});
-				}, respawnDelay);
-				timeoutsRef.current.push(t);
-			},
-		});
-	};
-
-	const scheduleAutoPop = (el: HTMLDivElement, index: number) => {
-		const delay = 4500 + Math.random() * 7000;
-		const t = setTimeout(() => {
-			if (!poppingRef.current[index]) popBubble(el, index);
-		}, delay);
-		timeoutsRef.current.push(t);
-	};
 
 	return (
 		<section
@@ -279,33 +101,8 @@ export default function HeroSection() {
 				}}
 			/>
 
-			{/* === Floating bubbles (mid layer) — click to pop, some also burst on their own === */}
-			{BUBBLES.map((b, i) => (
-				<div
-					key={i}
-					ref={el => {
-						bubbleRefs.current[i] = el;
-					}}
-					onClick={() => {
-						const el = bubbleRefs.current[i];
-						if (el) popBubble(el, i);
-					}}
-					aria-hidden='true'
-					className='hero-bubble absolute animate-float cursor-pointer rounded-full'
-					style={{
-						width: b.w,
-						height: b.h,
-						top: b.top,
-						left: b.left,
-						backgroundColor: b.color,
-						border: `1px solid ${b.color.replace(/,\s*[\d.]+\)$/, ', 0.4)')}`,
-						animationDuration: b.dur,
-						animationDelay: b.delay,
-						opacity: 0,
-						willChange: 'transform',
-					}}
-				/>
-			))}
+			{/* === Red 3D de nodos (capa media) — ambiental, sin interacción === */}
+			<HeroNetworkScene />
 
 			{/* === Content (top layer) === */}
 			<div className='relative z-10 mx-auto flex max-w-4xl flex-col items-center text-center'>

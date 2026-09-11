@@ -42,18 +42,12 @@ export default {
 			},
 			animation: {
 				blob: 'blob 9s ease-in-out infinite',
-				float: 'float 6s ease-in-out infinite',
 			},
 			keyframes: {
 				blob: {
 					'0%, 100%': { transform: 'translate(0, 0) scale(1)' },
 					'33%': { transform: 'translate(30px, -40px) scale(1.08)' },
 					'66%': { transform: 'translate(-20px, 20px) scale(0.94)' },
-				},
-				float: {
-					'0%, 100%': { transform: 'translate(0, 0)' },
-					'33%': { transform: 'translate(7px, -20px)' },
-					'66%': { transform: 'translate(-9px, -7px)' },
 				},
 			},
 		},
