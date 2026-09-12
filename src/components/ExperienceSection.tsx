@@ -1,7 +1,8 @@
 'use client';
 import { Linkedin } from '@/components/Icons';
 import { experiences } from '@/data/experiences';
-import { animate, stagger } from 'animejs';
+import { cn } from '@/utils/cn';
+import { animate, createTimeline } from 'animejs';
 import { useEffect, useRef } from 'react';
 
 export default function ExperienceSection() {
@@ -10,21 +11,68 @@ export default function ExperienceSection() {
 	useEffect(() => {
 		const observer = new IntersectionObserver(
 			entries => {
-				if (entries[0].isIntersecting) {
-					animate('.exp-card', {
-						translateX: [-30, 0],
-						opacity: [0, 1],
-						duration: 400,
-						delay: stagger(60),
-						ease: 'outExpo',
+				if (!entries[0].isIntersecting) return;
+				observer.disconnect();
+
+				const n = experiences.length;
+				const prefersReducedMotion = window.matchMedia(
+					'(prefers-reduced-motion: reduce)',
+				).matches;
+
+				if (prefersReducedMotion) {
+					animate('.timeline-fill', { height: '100%', duration: 0 });
+					animate('.exp-node, .exp-card', {
+						opacity: 1,
+						scale: 1,
+						translateX: 0,
+						duration: 0,
 					});
-					animate('.timeline-fill', {
-						height: ['0%', '100%'],
-						duration: 800,
-						ease: 'inOutCubic',
-					});
-					observer.disconnect();
+					return;
 				}
+
+				// El camino se traza igual que la trayectoria: la línea avanza y,
+				// justo cuando llega a la altura de cada hito, ese nodo "se
+				// activa" (rebote + ping) y su tarjeta aparece — en vez de un
+				// fade genérico desacoplado del dibujo de la línea.
+				const fillDuration = Math.max(1200, n * 260);
+				const timeline = createTimeline();
+				timeline.add(
+					'.timeline-fill',
+					{
+						height: ['0%', '100%'],
+						duration: fillDuration,
+						ease: 'inOutCubic',
+					},
+					0,
+				);
+				experiences.forEach((_, i) => {
+					const t = n > 1 ? (i / (n - 1)) * fillDuration : 0;
+					timeline.add(
+						`.exp-node-${i}`,
+						{ scale: [0, 1], duration: 380, ease: 'outBack' },
+						t,
+					);
+					timeline.add(
+						`.exp-ping-${i}`,
+						{
+							scale: [1, 2.2],
+							opacity: [0.5, 0],
+							duration: 650,
+							ease: 'outSine',
+						},
+						t,
+					);
+					timeline.add(
+						`.exp-card-${i}`,
+						{
+							translateX: [-24, 0],
+							opacity: [0, 1],
+							duration: 420,
+							ease: 'outExpo',
+						},
+						t,
+					);
+				});
 			},
 			{ threshold: 0.1 },
 		);
@@ -69,19 +117,37 @@ export default function ExperienceSection() {
 						{experiences.map((exp, idx) => {
 							const Icon = exp.icon;
 							return (
-								<div
-									key={idx}
-									className='exp-card relative flex gap-6 opacity-0'
-								>
+								<div key={idx} className='relative flex gap-6'>
+									{/* Ping: expanding ring, fired once the traveling line reaches this node */}
+									<div
+										aria-hidden='true'
+										className={cn(
+											`exp-ping-${idx}`,
+											'pointer-events-none absolute -left-10 z-0 mt-1 h-8 w-8 rounded-xl border-2 opacity-0 md:-left-14',
+											exp.accent,
+										)}
+									/>
+
 									{/* Node */}
 									<div
-										className={`absolute -left-10 z-10 mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border md:-left-14 ${exp.accent}`}
+										className={cn(
+											'exp-node',
+											`exp-node-${idx}`,
+											'absolute -left-10 z-10 mt-1 flex h-8 w-8 flex-shrink-0 scale-0 items-center justify-center rounded-xl border md:-left-14',
+											exp.accent,
+										)}
 									>
 										<Icon className='h-4 w-4' />
 									</div>
 
 									{/* Card */}
-									<div className='glass-card group flex-1 p-6 hover:shadow-card-hover'>
+									<div
+										className={cn(
+											'exp-card',
+											`exp-card-${idx}`,
+											'glass-card group flex-1 p-6 opacity-0 hover:shadow-card-hover',
+										)}
+									>
 										<div className='mb-2 flex flex-wrap items-center gap-2'>
 											<span className='inline-flex items-center gap-1 rounded-full border border-border bg-foreground/5 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-muted'>
 												{exp.year}

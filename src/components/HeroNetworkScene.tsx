@@ -1,18 +1,18 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import {
+	AdditiveBlending,
 	BufferAttribute,
 	BufferGeometry,
+	CanvasTexture,
 	Clock,
 	Color,
-	DynamicDrawUsage,
-	IcosahedronGeometry,
-	InstancedMesh,
 	LineBasicMaterial,
 	LineSegments,
-	MeshBasicMaterial,
 	Object3D,
 	PerspectiveCamera,
+	Points,
+	PointsMaterial,
 	Scene,
 	Vector3,
 	WebGLRenderer,
@@ -23,7 +23,8 @@ import {
 // un elemento importado de otro lado.
 const NODE_COLORS = ['#6366F1', '#8B5CF6', '#06B6D4', '#F97316'];
 const NODE_COUNT = 34;
-const NEIGHBORS_PER_NODE = 2;
+const NEIGHBORS_PER_NODE = 3;
+const PULSE_COUNT = 9;
 
 // Empuja un valor en [-1, 1] hacia los bordes, dejando un hueco cerca de
 // 0. Se usa para que la red enmarque el texto del hero por los costados
@@ -75,6 +76,45 @@ function buildEdges(points: Vector3[]): [number, number][] {
 	return edges;
 }
 
+// Textura de un punto suave (blanco opaco al centro, transparente en el
+// borde) generada en un <canvas>, sin depender de un asset externo. Se
+// reutiliza para halos, núcleos y pulsos: solo cambian tamaño/color/
+// opacidad de cada capa de Points que la usa.
+function createGlowTexture(): CanvasTexture {
+	const size = 128;
+	const canvas = document.createElement('canvas');
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext('2d')!;
+	const gradient = ctx.createRadialGradient(
+		size / 2,
+		size / 2,
+		0,
+		size / 2,
+		size / 2,
+		size / 2,
+	);
+	gradient.addColorStop(0, 'rgba(255,255,255,1)');
+	gradient.addColorStop(0.35, 'rgba(255,255,255,0.75)');
+	gradient.addColorStop(1, 'rgba(255,255,255,0)');
+	ctx.fillStyle = gradient;
+	ctx.fillRect(0, 0, size, size);
+	const texture = new CanvasTexture(canvas);
+	texture.needsUpdate = true;
+	return texture;
+}
+
+type Pulse = { edge: number; progress: number; speed: number; delay: number };
+
+function spawnPulse(edgeCount: number): Pulse {
+	return {
+		edge: Math.floor(Math.random() * edgeCount),
+		progress: 0,
+		speed: 0.28 + Math.random() * 0.3,
+		delay: 0.3 + Math.random() * 2.2,
+	};
+}
+
 export default function HeroNetworkScene() {
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -112,29 +152,48 @@ export default function HeroNetworkScene() {
 
 		const points = fibonacciSpherePoints(NODE_COUNT);
 		const edges = buildEdges(points);
+		const glowTexture = createGlowTexture();
 
-		// Nodos: una única geometría + InstancedMesh en vez de 34 mallas
-		// separadas, para mantener las llamadas de dibujo (draw calls) en una
-		// sola, sin importar cuántos nodos tenga la red.
-		const nodeGeometry = new IcosahedronGeometry(0.13, 0);
-		const nodeMaterial = new MeshBasicMaterial({
-			transparent: true,
-			opacity: 0.6,
-		});
-		const nodes = new InstancedMesh(nodeGeometry, nodeMaterial, NODE_COUNT);
-		nodes.instanceMatrix.setUsage(DynamicDrawUsage);
-		const dummy = new Object3D();
-		const color = new Color();
+		// Nodos: nada de geometría poligonal (se leía como "cubos"/gemas
+		// facetadas) — cada nodo son dos sprites concéntricos (halo suave +
+		// núcleo brillante) sobre la misma textura radial, como una neurona
+		// vista de lejos. Comparten un único BufferGeometry: dos Points, una
+		// sola fuente de posiciones/colores.
+		const nodePositions = new Float32Array(NODE_COUNT * 3);
+		const nodeColors = new Float32Array(NODE_COUNT * 3);
+		const tmpColor = new Color();
 		points.forEach((p, i) => {
-			dummy.position.copy(p);
-			const scale = 0.7 + Math.random() * 0.6;
-			dummy.scale.setScalar(scale);
-			dummy.updateMatrix();
-			nodes.setMatrixAt(i, dummy.matrix);
-			nodes.setColorAt(i, color.set(NODE_COLORS[i % NODE_COLORS.length]));
+			nodePositions.set([p.x, p.y, p.z], i * 3);
+			tmpColor.set(NODE_COLORS[i % NODE_COLORS.length]);
+			nodeColors.set([tmpColor.r, tmpColor.g, tmpColor.b], i * 3);
 		});
-		nodes.instanceMatrix.needsUpdate = true;
-		nodes.instanceColor!.needsUpdate = true;
+		const nodeGeometry = new BufferGeometry();
+		nodeGeometry.setAttribute(
+			'position',
+			new BufferAttribute(nodePositions, 3),
+		);
+		nodeGeometry.setAttribute('color', new BufferAttribute(nodeColors, 3));
+
+		const haloMaterial = new PointsMaterial({
+			size: 0.85,
+			sizeAttenuation: true,
+			map: glowTexture,
+			vertexColors: true,
+			transparent: true,
+			opacity: 0.3,
+			depthWrite: false,
+		});
+		const coreMaterial = new PointsMaterial({
+			size: 0.3,
+			sizeAttenuation: true,
+			map: glowTexture,
+			vertexColors: true,
+			transparent: true,
+			opacity: 0.85,
+			depthWrite: false,
+		});
+		const nodeHalos = new Points(nodeGeometry, haloMaterial);
+		const nodeCores = new Points(nodeGeometry, coreMaterial);
 
 		// Aristas: un solo LineSegments con todos los tramos, coloreadas
 		// suaves para que los nodos sean el foco.
@@ -160,12 +219,36 @@ export default function HeroNetworkScene() {
 		const edgeMaterial = new LineBasicMaterial({
 			color: '#94a3b8',
 			transparent: true,
-			opacity: 0.18,
+			opacity: 0.22,
 		});
 		const edgeLines = new LineSegments(edgeGeometry, edgeMaterial);
 
+		// Pulsos: pequeñas "señales" que recorren aristas al azar, una a la
+		// vez por slot, con su propia demora antes de partir — como impulsos
+		// nerviosos disparándose de forma asíncrona por la red. Una sola capa
+		// de Points cuyas posiciones se reescriben cada frame (barato: 9
+		// vértices).
+		const pulses: Pulse[] = Array.from({ length: PULSE_COUNT }, () =>
+			spawnPulse(edges.length),
+		);
+		const pulsePositions = new Float32Array(PULSE_COUNT * 3);
+		const pulseGeometry = new BufferGeometry();
+		const pulsePositionAttr = new BufferAttribute(pulsePositions, 3);
+		pulseGeometry.setAttribute('position', pulsePositionAttr);
+		const pulseMaterial = new PointsMaterial({
+			size: 0.26,
+			sizeAttenuation: true,
+			map: glowTexture,
+			color: '#ffffff',
+			transparent: true,
+			opacity: 0.95,
+			depthWrite: false,
+			blending: AdditiveBlending,
+		});
+		const pulsePoints = new Points(pulseGeometry, pulseMaterial);
+
 		const group = new Object3D();
-		group.add(nodes, edgeLines);
+		group.add(edgeLines, nodeHalos, nodeCores, pulsePoints);
 		group.rotation.x = 0.15;
 		scene.add(group);
 
@@ -198,12 +281,42 @@ export default function HeroNetworkScene() {
 		const clock = new Clock();
 		let frameId: number | null = null;
 		let isVisible = true;
+		let elapsed = 0;
 		let autoRotationY = 0;
 		let parallaxX = 0;
 		let parallaxY = 0;
 
+		const updatePulses = (delta: number) => {
+			for (let i = 0; i < pulses.length; i++) {
+				const pulse = pulses[i];
+				const [a, b] = edges[pulse.edge];
+				const pa = points[a];
+				const pb = points[b];
+				if (pulse.delay > 0) {
+					pulse.delay -= delta;
+					pulsePositions.set([pa.x, pa.y, pa.z], i * 3);
+					continue;
+				}
+				pulse.progress += delta * pulse.speed;
+				if (pulse.progress >= 1) {
+					pulses[i] = spawnPulse(edges.length);
+					continue;
+				}
+				pulsePositions.set(
+					[
+						pa.x + (pb.x - pa.x) * pulse.progress,
+						pa.y + (pb.y - pa.y) * pulse.progress,
+						pa.z + (pb.z - pa.z) * pulse.progress,
+					],
+					i * 3,
+				);
+			}
+			pulsePositionAttr.needsUpdate = true;
+		};
+
 		const renderFrame = () => {
-			const delta = clock.getDelta();
+			const delta = Math.min(clock.getDelta(), 0.1);
+			elapsed += delta;
 			autoRotationY += delta * 0.05;
 			// Paralaje suavizado (lerp) hacia el target del mouse, en vez de
 			// escribir la rotación directo: así no salta cuando el mouse se
@@ -212,6 +325,15 @@ export default function HeroNetworkScene() {
 			parallaxY += (pointerTarget.y - parallaxY) * 0.04;
 			group.rotation.y = autoRotationY + parallaxX * 0.15;
 			group.rotation.x = 0.15 + parallaxY * 0.12;
+
+			// Respiración lenta y sincronizada: un único seno aplicado al
+			// material (no por nodo) para que la red se sienta viva sin
+			// necesitar un shader por-vértice.
+			const breathe = Math.sin(elapsed * 0.8) * 0.5 + 0.5;
+			coreMaterial.opacity = 0.75 + breathe * 0.15;
+			haloMaterial.opacity = 0.24 + breathe * 0.12;
+
+			if (!prefersReducedMotion) updatePulses(delta);
 			renderer.render(scene, camera);
 		};
 
@@ -260,9 +382,13 @@ export default function HeroNetworkScene() {
 			document.removeEventListener('visibilitychange', onVisibilityChange);
 			window.removeEventListener('pointermove', onPointerMove);
 			nodeGeometry.dispose();
-			nodeMaterial.dispose();
+			haloMaterial.dispose();
+			coreMaterial.dispose();
 			edgeGeometry.dispose();
 			edgeMaterial.dispose();
+			pulseGeometry.dispose();
+			pulseMaterial.dispose();
+			glowTexture.dispose();
 			renderer.dispose();
 			container.removeChild(renderer.domElement);
 		};
