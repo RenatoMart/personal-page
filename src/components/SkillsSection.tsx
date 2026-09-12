@@ -8,6 +8,7 @@ import {
 	SiClaudecode,
 	SiCplusplus,
 	SiDocker,
+	SiDrizzle,
 	SiGo,
 	SiJavascript,
 	SiJetbrains,
@@ -56,6 +57,7 @@ const categories = [
 		logos: [
 			SiNextdotjs,
 			SiNodedotjs,
+			SiDrizzle,
 			SiNestjs,
 			SiReact,
 			SiSocketdotio,
@@ -68,6 +70,7 @@ const categories = [
 			'Node.js',
 			'WebSockets (Socket.io)',
 			'Prisma ORM',
+			'Drizzle ORM',
 		],
 	},
 	{
