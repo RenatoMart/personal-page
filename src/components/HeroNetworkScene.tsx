@@ -25,7 +25,7 @@ const NODE_COLORS = ['#6366F1', '#8B5CF6', '#06B6D4', '#F97316'];
 const NODE_COUNT = 34;
 const NEIGHBORS_PER_NODE = 3;
 const PULSE_COUNT = 9;
-const CLOUD_COUNT = 12;
+const CLOUD_COUNT = 22;
 
 // Empuja un valor en [-1, 1] hacia los bordes, dejando un hueco cerca de
 // 0. Se usa para que la red enmarque el texto del hero por los costados
@@ -223,9 +223,13 @@ export default function HeroNetworkScene() {
 		const nodeHalos = new Points(nodeGeometry, haloMaterial);
 		const nodeCores = new Points(nodeGeometry, coreMaterial);
 
-		// Aristas: un solo LineSegments con todos los tramos, coloreadas
-		// suaves para que los nodos sean el foco.
+		// Aristas: un solo LineSegments con todos los tramos. Cada arista
+		// hereda el color de sus dos neuronas (degradado entre ambas) en vez
+		// de un gris plano, y se dibuja con blending aditivo — así se lee
+		// como la conexión "encendida" entre neuronas, no como un cable
+		// genérico, y brilla más donde varias aristas convergen en un nodo.
 		const edgePositions = new Float32Array(edges.length * 6);
+		const edgeColors = new Float32Array(edges.length * 6);
 		edges.forEach(([a, b], i) => {
 			edgePositions.set(
 				[
@@ -238,16 +242,23 @@ export default function HeroNetworkScene() {
 				],
 				i * 6,
 			);
+			tmpColor.set(NODE_COLORS[a % NODE_COLORS.length]);
+			edgeColors.set([tmpColor.r, tmpColor.g, tmpColor.b], i * 6);
+			tmpColor.set(NODE_COLORS[b % NODE_COLORS.length]);
+			edgeColors.set([tmpColor.r, tmpColor.g, tmpColor.b], i * 6 + 3);
 		});
 		const edgeGeometry = new BufferGeometry();
 		edgeGeometry.setAttribute(
 			'position',
 			new BufferAttribute(edgePositions, 3),
 		);
+		edgeGeometry.setAttribute('color', new BufferAttribute(edgeColors, 3));
 		const edgeMaterial = new LineBasicMaterial({
-			color: '#94a3b8',
+			vertexColors: true,
 			transparent: true,
-			opacity: 0.22,
+			opacity: 0.45,
+			blending: AdditiveBlending,
+			depthWrite: false,
 		});
 		const edgeLines = new LineSegments(edgeGeometry, edgeMaterial);
 
@@ -275,40 +286,50 @@ export default function HeroNetworkScene() {
 		});
 		const pulsePoints = new Points(pulseGeometry, pulseMaterial);
 
-		// Nubes: manchas de humo de color grandes y muy tenues, detrás de la
-		// red, para darle atmósfera de nebulosa sin oscurecer el fondo claro
-		// del sitio. Su z es más negativo que el de los nodos (más lejos de
-		// la cámara) y cubren todo el ancho, a diferencia de los nodos que se
+		// Nubes: manchas de humo de color grandes y tenues, detrás de la red,
+		// para darle atmósfera de nebulosa sin oscurecer el fondo claro del
+		// sitio. Su z es más negativo que el de los nodos (más lejos de la
+		// cámara) y cubren todo el ancho, a diferencia de los nodos que se
 		// apartan del centro para no tapar el texto: el humo es tan tenue que
-		// pasar detrás del texto no afecta la legibilidad.
+		// pasar detrás del texto no afecta la legibilidad. Cada una deriva
+		// con su propia fase/frecuencia (no solo el giro rígido del grupo),
+		// para que se sientan como niebla real y no como un adorno fijo.
 		const cloudTexture = createCloudTexture();
+		const cloudBasePositions = new Float32Array(CLOUD_COUNT * 3);
 		const cloudPositions = new Float32Array(CLOUD_COUNT * 3);
 		const cloudColors = new Float32Array(CLOUD_COUNT * 3);
+		const cloudDrift = Array.from({ length: CLOUD_COUNT }, () => ({
+			freqX: 0.08 + Math.random() * 0.1,
+			freqY: 0.06 + Math.random() * 0.09,
+			offX: Math.random() * Math.PI * 2,
+			offY: Math.random() * Math.PI * 2,
+			ampX: 0.5 + Math.random() * 0.9,
+			ampY: 0.4 + Math.random() * 0.7,
+		}));
 		for (let i = 0; i < CLOUD_COUNT; i++) {
-			cloudPositions.set(
+			cloudBasePositions.set(
 				[
-					(Math.random() * 2 - 1) * 6.4,
-					(Math.random() * 2 - 1) * 3.4,
-					-3.5 - Math.random() * 3,
+					(Math.random() * 2 - 1) * 7,
+					(Math.random() * 2 - 1) * 3.6,
+					-3.5 - Math.random() * 3.5,
 				],
 				i * 3,
 			);
 			tmpColor.set(NODE_COLORS[i % NODE_COLORS.length]);
 			cloudColors.set([tmpColor.r, tmpColor.g, tmpColor.b], i * 3);
 		}
+		cloudPositions.set(cloudBasePositions);
 		const cloudGeometry = new BufferGeometry();
-		cloudGeometry.setAttribute(
-			'position',
-			new BufferAttribute(cloudPositions, 3),
-		);
+		const cloudPositionAttr = new BufferAttribute(cloudPositions, 3);
+		cloudGeometry.setAttribute('position', cloudPositionAttr);
 		cloudGeometry.setAttribute('color', new BufferAttribute(cloudColors, 3));
 		const cloudMaterial = new PointsMaterial({
-			size: 4.2,
+			size: 4.8,
 			sizeAttenuation: true,
 			map: cloudTexture,
 			vertexColors: true,
 			transparent: true,
-			opacity: 0.16,
+			opacity: 0.22,
 			depthWrite: false,
 		});
 		const cloudPoints = new Points(cloudGeometry, cloudMaterial);
@@ -385,6 +406,19 @@ export default function HeroNetworkScene() {
 			pulsePositionAttr.needsUpdate = true;
 		};
 
+		const updateClouds = () => {
+			for (let i = 0; i < CLOUD_COUNT; i++) {
+				const d = cloudDrift[i];
+				cloudPositions[i * 3] =
+					cloudBasePositions[i * 3] +
+					Math.sin(elapsed * d.freqX + d.offX) * d.ampX;
+				cloudPositions[i * 3 + 1] =
+					cloudBasePositions[i * 3 + 1] +
+					Math.cos(elapsed * d.freqY + d.offY) * d.ampY;
+			}
+			cloudPositionAttr.needsUpdate = true;
+		};
+
 		const renderFrame = () => {
 			const delta = Math.min(clock.getDelta(), 0.1);
 			elapsed += delta;
@@ -409,8 +443,12 @@ export default function HeroNetworkScene() {
 			const breathe = Math.sin(elapsed * 0.8) * 0.5 + 0.5;
 			coreMaterial.opacity = 0.75 + breathe * 0.15;
 			haloMaterial.opacity = 0.24 + breathe * 0.12;
+			cloudMaterial.opacity = 0.19 + Math.sin(elapsed * 0.3 + 2) * 0.04;
 
-			if (!prefersReducedMotion) updatePulses(delta);
+			if (!prefersReducedMotion) {
+				updatePulses(delta);
+				updateClouds();
+			}
 			renderer.render(scene, camera);
 		};
 
