@@ -22,8 +22,6 @@ import {
 // resto del sitio, para que el 3D se sienta parte del mismo sistema y no
 // un elemento importado de otro lado.
 const NODE_COLORS = ['#6366F1', '#8B5CF6', '#06B6D4', '#F97316'];
-const NODE_COUNT = 34;
-const NEIGHBORS_PER_NODE = 3;
 const PULSE_COUNT = 9;
 const CLOUD_COUNT = 22;
 
@@ -52,9 +50,12 @@ function shapeForAspect(aspect: number) {
 				scaleY: 4.2,
 				scaleZ: 1.6,
 				// En celular el texto ocupa casi toda la columna: sin un hueco
-				// limpio donde meter la red, se baja la opacidad para que el
-				// solape con las letras se sienta a atmósfera y no a choque.
-				opacityScale: 0.7,
+				// limpio donde meter la red, se baja la opacidad y la densidad
+				// (menos nodos, menos vecinos por nodo) para que se sienta a
+				// atmósfera detrás del texto y no a maraña de líneas encima.
+				opacityScale: 0.45,
+				nodeCount: 20,
+				neighbors: 2,
 			}
 		: {
 				gapX: 0.55,
@@ -63,6 +64,8 @@ function shapeForAspect(aspect: number) {
 				scaleY: 2.9,
 				scaleZ: 2.4,
 				opacityScale: 1,
+				nodeCount: 34,
+				neighbors: 3,
 			};
 }
 
@@ -93,14 +96,17 @@ function fibonacciSpherePoints(
 // grafo real derivado de las posiciones (no líneas puestas a mano), que
 // es la misma idea de "sistemas distribuidos conectados" que atraviesa
 // varios de los proyectos reales (WebSockets, APIs, sincronización).
-function buildEdges(points: Vector3[]): [number, number][] {
+function buildEdges(
+	points: Vector3[],
+	neighborsPerNode: number,
+): [number, number][] {
 	const edges: [number, number][] = [];
 	const seen = new Set<string>();
 	points.forEach((p, i) => {
 		const distances = points
 			.map((q, j) => ({ j, d: i === j ? Infinity : p.distanceTo(q) }))
 			.sort((a, b) => a.d - b.d)
-			.slice(0, NEIGHBORS_PER_NODE);
+			.slice(0, neighborsPerNode);
 		distances.forEach(({ j }) => {
 			const key = i < j ? `${i}-${j}` : `${j}-${i}`;
 			if (!seen.has(key)) {
@@ -213,8 +219,9 @@ export default function HeroNetworkScene() {
 		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		container.appendChild(renderer.domElement);
 
-		const points = fibonacciSpherePoints(NODE_COUNT, shape);
-		const edges = buildEdges(points);
+		const nodeCount = shape.nodeCount;
+		const points = fibonacciSpherePoints(nodeCount, shape);
+		const edges = buildEdges(points, shape.neighbors);
 		const glowTexture = createGlowTexture();
 
 		// Nodos: nada de geometría poligonal (se leía como "cubos"/gemas
@@ -222,8 +229,8 @@ export default function HeroNetworkScene() {
 		// núcleo brillante) sobre la misma textura radial, como una neurona
 		// vista de lejos. Comparten un único BufferGeometry: dos Points, una
 		// sola fuente de posiciones/colores.
-		const nodePositions = new Float32Array(NODE_COUNT * 3);
-		const nodeColors = new Float32Array(NODE_COUNT * 3);
+		const nodePositions = new Float32Array(nodeCount * 3);
+		const nodeColors = new Float32Array(nodeCount * 3);
 		const tmpColor = new Color();
 		points.forEach((p, i) => {
 			nodePositions.set([p.x, p.y, p.z], i * 3);
