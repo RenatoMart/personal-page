@@ -35,21 +35,56 @@ function pushFromCenter(v: number, gap: number): number {
 	return sign * (gap + Math.abs(v) * (1 - gap));
 }
 
+// Forma del elipsoide de nodos, según el aspecto real del contenedor.
+// En un hero ancho (desktop) el texto es una columna angosta en el
+// medio: la red se aparta del centro en X y cubre bastante alto/bajo.
+// En uno angosto (celular) el texto ocupa casi todo el ancho pero solo
+// una franja vertical: la red se achica en X (si no, no entra en el
+// frustum) y se aparta del centro en Y, agrupándose arriba/abajo del
+// bloque de texto en vez de a los costados.
+function shapeForAspect(aspect: number) {
+	const isPortrait = aspect < 1;
+	return isPortrait
+		? {
+				gapX: 0.1,
+				gapY: 0.05,
+				scaleX: 2.0,
+				scaleY: 4.2,
+				scaleZ: 1.6,
+				// En celular el texto ocupa casi toda la columna: sin un hueco
+				// limpio donde meter la red, se baja la opacidad para que el
+				// solape con las letras se sienta a atmósfera y no a choque.
+				opacityScale: 0.7,
+			}
+		: {
+				gapX: 0.55,
+				gapY: 0.4,
+				scaleX: 5.4,
+				scaleY: 2.9,
+				scaleZ: 2.4,
+				opacityScale: 1,
+			};
+}
+
 // Distribución de Fibonacci sobre una esfera: da una nube de puntos
 // pareja (sin huecos ni amontonamientos), a diferencia de posiciones
-// aleatorias puras. Se aparta del centro en X/Y (donde vive el texto) y
-// se escala a un elipsoide ancho y bajo para encajar en el hero.
-function fibonacciSpherePoints(count: number): Vector3[] {
+// aleatorias puras, luego deformada según shapeForAspect.
+function fibonacciSpherePoints(
+	count: number,
+	shape: ReturnType<typeof shapeForAspect>,
+): Vector3[] {
 	const points: Vector3[] = [];
 	const goldenAngle = Math.PI * (3 - Math.sqrt(5));
 	for (let i = 0; i < count; i++) {
 		const y = 1 - (i / (count - 1)) * 2;
 		const radiusAtY = Math.sqrt(1 - y * y);
 		const theta = goldenAngle * i;
-		const x = pushFromCenter(Math.cos(theta) * radiusAtY, 0.55);
-		const yShaped = pushFromCenter(y, 0.4);
+		const x = pushFromCenter(Math.cos(theta) * radiusAtY, shape.gapX);
+		const yShaped = pushFromCenter(y, shape.gapY);
 		const z = Math.sin(theta) * radiusAtY;
-		points.push(new Vector3(x * 5.4, yShaped * 2.9, z * 2.4));
+		points.push(
+			new Vector3(x * shape.scaleX, yShaped * shape.scaleY, z * shape.scaleZ),
+		);
 	}
 	return points;
 }
@@ -150,13 +185,13 @@ export default function HeroNetworkScene() {
 		const container = containerRef.current;
 		if (!container) return;
 
-		// La red está compuesta y encuadrada para un hero ancho. En pantallas
-		// angostas el frustum de la cámara queda mucho más recortado en
-		// horizontal y los nodos (pensados para enmarcar el texto por los
-		// costados) caen fuera de cuadro: se pagaría el costo de WebGL sin
-		// mostrar nada. Los blobs de fondo ya dan ambiente propio ahí, así que
-		// directamente no se monta.
-		if (!window.matchMedia('(min-width: 768px)').matches) return;
+		// La forma de la red se decide una vez, con el tamaño real del
+		// contenedor al montar (no con el de la ventana completa, que no
+		// coincide con el alto del hero). Si cambia de orientación (celular
+		// girado) no se recalcula: es un fondo ambiental, no vale la pena la
+		// complejidad de reconstruir toda la geometría en pleno uso.
+		const initialRect = container.getBoundingClientRect();
+		const shape = shapeForAspect(initialRect.width / (initialRect.height || 1));
 
 		const prefersReducedMotion = window.matchMedia(
 			'(prefers-reduced-motion: reduce)',
@@ -178,7 +213,7 @@ export default function HeroNetworkScene() {
 		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		container.appendChild(renderer.domElement);
 
-		const points = fibonacciSpherePoints(NODE_COUNT);
+		const points = fibonacciSpherePoints(NODE_COUNT, shape);
 		const edges = buildEdges(points);
 		const glowTexture = createGlowTexture();
 
@@ -256,7 +291,7 @@ export default function HeroNetworkScene() {
 		const edgeMaterial = new LineBasicMaterial({
 			vertexColors: true,
 			transparent: true,
-			opacity: 0.45,
+			opacity: 0.45 * shape.opacityScale,
 			blending: AdditiveBlending,
 			depthWrite: false,
 		});
@@ -306,11 +341,16 @@ export default function HeroNetworkScene() {
 			ampX: 0.5 + Math.random() * 0.9,
 			ampY: 0.4 + Math.random() * 0.7,
 		}));
+		// Mismo criterio que los nodos: la nube de humo se achica en X y se
+		// alarga en Y cuando el hero es angosto, para no quedar recortada
+		// fuera del frustum ni amontonada en el medio.
+		const cloudRangeX = 7 * (shape.scaleX / 5.4);
+		const cloudRangeY = 3.6 * (shape.scaleY / 2.9);
 		for (let i = 0; i < CLOUD_COUNT; i++) {
 			cloudBasePositions.set(
 				[
-					(Math.random() * 2 - 1) * 7,
-					(Math.random() * 2 - 1) * 3.6,
+					(Math.random() * 2 - 1) * cloudRangeX,
+					(Math.random() * 2 - 1) * cloudRangeY,
 					-3.5 - Math.random() * 3.5,
 				],
 				i * 3,
@@ -441,8 +481,8 @@ export default function HeroNetworkScene() {
 			// material (no por nodo) para que la red se sienta viva sin
 			// necesitar un shader por-vértice.
 			const breathe = Math.sin(elapsed * 0.8) * 0.5 + 0.5;
-			coreMaterial.opacity = 0.75 + breathe * 0.15;
-			haloMaterial.opacity = 0.24 + breathe * 0.12;
+			coreMaterial.opacity = (0.75 + breathe * 0.15) * shape.opacityScale;
+			haloMaterial.opacity = (0.24 + breathe * 0.12) * shape.opacityScale;
 			cloudMaterial.opacity = 0.19 + Math.sin(elapsed * 0.3 + 2) * 0.04;
 
 			if (!prefersReducedMotion) {
