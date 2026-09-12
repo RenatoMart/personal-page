@@ -42,12 +42,19 @@ export default {
 			},
 			animation: {
 				blob: 'blob 9s ease-in-out infinite',
+				drift: 'drift 6s ease-in-out infinite',
 			},
 			keyframes: {
 				blob: {
 					'0%, 100%': { transform: 'translate(0, 0) scale(1)' },
 					'33%': { transform: 'translate(30px, -40px) scale(1.08)' },
 					'66%': { transform: 'translate(-20px, 20px) scale(0.94)' },
+				},
+				drift: {
+					'0%, 100%': { transform: 'translate(0, 0) rotate(0deg)' },
+					'25%': { transform: 'translate(14px, -18px) rotate(10deg)' },
+					'50%': { transform: 'translate(-10px, -26px) rotate(-6deg)' },
+					'75%': { transform: 'translate(-18px, -6px) rotate(6deg)' },
 				},
 			},
 		},
