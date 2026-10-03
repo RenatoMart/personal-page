@@ -1,5 +1,6 @@
 'use client';
 import { Github, Linkedin } from '@/components/Icons';
+import TerminalLine from '@/components/TerminalLine';
 import { animate, stagger } from 'animejs';
 import { ArrowRight, Code2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -109,7 +110,7 @@ export default function HeroSection() {
 				{/* Badge */}
 				<div
 					ref={badgeRef}
-					className='mb-10 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white px-4 py-2 text-sm font-semibold text-primary opacity-0 shadow-sm'
+					className='mb-10 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white px-4 py-2 font-mono text-xs font-medium text-primary opacity-0 shadow-sm'
 				>
 					<Code2 className='h-3.5 w-3.5' />
 					Informática · Desarrollo Web · Voluntariado
@@ -161,6 +162,8 @@ export default function HeroSection() {
 					firmeza y dedicación para aportar valor real mediante código limpio y
 					trabajo en equipo.
 				</p>
+
+				<TerminalLine text='go · typescript · python · nestjs · postgres' />
 
 				{/* CTAs */}
 				<div

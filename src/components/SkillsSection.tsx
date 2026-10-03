@@ -135,7 +135,18 @@ export default function SkillsSection() {
 			{ threshold: 0.1 },
 		);
 		if (sectionRef.current) observer.observe(sectionRef.current);
-		return () => observer.disconnect();
+
+		// Los logos flotantes (CSS infinito) se pausan fuera de pantalla.
+		const section = sectionRef.current;
+		const visibility = new IntersectionObserver(([entry]) => {
+			if (section) section.dataset.offscreen = String(!entry.isIntersecting);
+		});
+		if (section) visibility.observe(section);
+
+		return () => {
+			observer.disconnect();
+			visibility.disconnect();
+		};
 	}, []);
 
 	return (

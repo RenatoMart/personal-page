@@ -205,7 +205,12 @@ export default function HeroNetworkScene() {
 
 		let renderer: WebGLRenderer;
 		try {
-			renderer = new WebGLRenderer({ antialias: true, alpha: true });
+			// A DPR >= 2 ya suaviza los bordes; el MSAA encima solo suma costo.
+			renderer = new WebGLRenderer({
+				antialias: window.devicePixelRatio < 2,
+				alpha: true,
+				powerPreference: 'high-performance',
+			});
 		} catch {
 			// Sin soporte de WebGL: no monta nada, el gradiente/blobs de fondo
 			// del hero siguen ahí solos, sin hueco roto.
@@ -216,7 +221,8 @@ export default function HeroNetworkScene() {
 		const camera = new PerspectiveCamera(50, 1, 0.1, 100);
 		camera.position.set(0, 0, 9);
 
-		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		let pixelRatio = Math.min(window.devicePixelRatio, 2);
+		renderer.setPixelRatio(pixelRatio);
 		container.appendChild(renderer.domElement);
 
 		const nodeCount = shape.nodeCount;
@@ -431,9 +437,12 @@ export default function HeroNetworkScene() {
 				const [a, b] = edges[pulse.edge];
 				const pa = points[a];
 				const pb = points[b];
+				const o = i * 3;
 				if (pulse.delay > 0) {
 					pulse.delay -= delta;
-					pulsePositions.set([pa.x, pa.y, pa.z], i * 3);
+					pulsePositions[o] = pa.x;
+					pulsePositions[o + 1] = pa.y;
+					pulsePositions[o + 2] = pa.z;
 					continue;
 				}
 				pulse.progress += delta * pulse.speed;
@@ -441,14 +450,10 @@ export default function HeroNetworkScene() {
 					pulses[i] = spawnPulse(edges.length);
 					continue;
 				}
-				pulsePositions.set(
-					[
-						pa.x + (pb.x - pa.x) * pulse.progress,
-						pa.y + (pb.y - pa.y) * pulse.progress,
-						pa.z + (pb.z - pa.z) * pulse.progress,
-					],
-					i * 3,
-				);
+				const t = pulse.progress;
+				pulsePositions[o] = pa.x + (pb.x - pa.x) * t;
+				pulsePositions[o + 1] = pa.y + (pb.y - pa.y) * t;
+				pulsePositions[o + 2] = pa.z + (pb.z - pa.z) * t;
 			}
 			pulsePositionAttr.needsUpdate = true;
 		};
@@ -466,8 +471,29 @@ export default function HeroNetworkScene() {
 			cloudPositionAttr.needsUpdate = true;
 		};
 
+		// Gobernador de calidad: si el promedio de ~90 frames queda por
+		// debajo de ~40fps, baja el pixel ratio de a 0.25 (mín. 1). Es de una
+		// sola vía a propósito — subir y bajar oscilaría y se vería peor que
+		// quedarse en una resolución estable.
+		let frameSamples = 0;
+		let frameTimeSum = 0;
+		const governQuality = (rawDelta: number) => {
+			if (pixelRatio <= 1 || rawDelta > 0.25) return;
+			frameTimeSum += rawDelta;
+			if (++frameSamples < 90) return;
+			if (frameTimeSum / frameSamples > 0.025) {
+				pixelRatio = Math.max(1, pixelRatio - 0.25);
+				renderer.setPixelRatio(pixelRatio);
+				resize();
+			}
+			frameSamples = 0;
+			frameTimeSum = 0;
+		};
+
 		const renderFrame = () => {
-			const delta = Math.min(clock.getDelta(), 0.1);
+			const rawDelta = clock.getDelta();
+			if (!prefersReducedMotion) governQuality(rawDelta);
+			const delta = Math.min(rawDelta, 0.1);
 			elapsed += delta;
 			autoRotationY += delta * 0.05;
 			// Paralaje suavizado (lerp) hacia el target del mouse, en vez de

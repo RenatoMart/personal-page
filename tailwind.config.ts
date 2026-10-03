@@ -25,6 +25,7 @@ export default {
 			},
 			fontFamily: {
 				sans: ['var(--font-dm-sans)', 'sans-serif'],
+				mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
 				display: ['var(--font-syne)', 'sans-serif'],
 			},
 			backgroundImage: {
@@ -43,12 +44,17 @@ export default {
 			animation: {
 				blob: 'blob 9s ease-in-out infinite',
 				drift: 'drift 6s ease-in-out infinite',
+				caret: 'caret 1s steps(1) 4',
 			},
 			keyframes: {
 				blob: {
 					'0%, 100%': { transform: 'translate(0, 0) scale(1)' },
 					'33%': { transform: 'translate(30px, -40px) scale(1.08)' },
 					'66%': { transform: 'translate(-20px, 20px) scale(0.94)' },
+				},
+				caret: {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0' },
 				},
 				drift: {
 					'0%, 100%': { transform: 'translate(0, 0) rotate(0deg)' },
