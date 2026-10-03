@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function NotFound() {
 	return (
-		<main className='min-h-screen bg-background text-foreground selection:bg-primary/30'>
+		<main className='min-h-screen text-foreground selection:bg-primary/30'>
 			<Navbar />
 			<div className='flex min-h-screen flex-col items-center justify-center px-6 py-24 text-center'>
 				<Illustration404 />

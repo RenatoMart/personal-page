@@ -9,6 +9,7 @@ import {
 	Color,
 	LineBasicMaterial,
 	LineSegments,
+	NormalBlending,
 	Object3D,
 	PerspectiveCamera,
 	Points,
@@ -184,7 +185,12 @@ function spawnPulse(edgeCount: number): Pulse {
 	};
 }
 
-export default function HeroNetworkScene() {
+export default function HeroNetworkScene({
+	variant = 'light',
+}: {
+	variant?: 'light' | 'dark';
+}) {
+	const dark = variant === 'dark';
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -197,7 +203,13 @@ export default function HeroNetworkScene() {
 		// girado) no se recalcula: es un fondo ambiental, no vale la pena la
 		// complejidad de reconstruir toda la geometría en pleno uso.
 		const initialRect = container.getBoundingClientRect();
-		const shape = shapeForAspect(initialRect.width / (initialRect.height || 1));
+		const baseShape = shapeForAspect(
+			initialRect.width / (initialRect.height || 1),
+		);
+		// Sobre fondo oscuro la red puede ser más densa sin ensuciar el texto.
+		const shape = dark
+			? { ...baseShape, nodeCount: baseShape.nodeCount + 10 }
+			: baseShape;
 
 		const prefersReducedMotion = window.matchMedia(
 			'(prefers-reduced-motion: reduce)',
@@ -224,6 +236,9 @@ export default function HeroNetworkScene() {
 		let pixelRatio = Math.min(window.devicePixelRatio, 2);
 		renderer.setPixelRatio(pixelRatio);
 		container.appendChild(renderer.domElement);
+		requestAnimationFrame(() => {
+			container.style.opacity = '1';
+		});
 
 		const nodeCount = shape.nodeCount;
 		const points = fibonacciSpherePoints(nodeCount, shape);
@@ -258,6 +273,7 @@ export default function HeroNetworkScene() {
 			transparent: true,
 			opacity: 0.3,
 			depthWrite: false,
+			blending: dark ? AdditiveBlending : NormalBlending,
 		});
 		const coreMaterial = new PointsMaterial({
 			size: 0.3,
@@ -384,12 +400,44 @@ export default function HeroNetworkScene() {
 			transparent: true,
 			opacity: 0.22,
 			depthWrite: false,
+			blending: dark ? AdditiveBlending : NormalBlending,
 		});
 		const cloudPoints = new Points(cloudGeometry, cloudMaterial);
 		cloudPoints.renderOrder = -1;
 
 		const cloudGroup = new Object3D();
 		cloudGroup.add(cloudPoints);
+
+		// Polvo estelar (solo en oscuro): cientos de puntos mínimos en una
+		// única capa, dan profundidad de campo sin costo de dibujo extra.
+		const dustCount = dark ? 260 : 0;
+		const dustPositions = new Float32Array(dustCount * 3);
+		for (let i = 0; i < dustCount; i++) {
+			dustPositions.set(
+				[
+					(Math.random() * 2 - 1) * cloudRangeX * 1.4,
+					(Math.random() * 2 - 1) * cloudRangeY * 1.2,
+					-5 + Math.random() * 8,
+				],
+				i * 3,
+			);
+		}
+		const dustGeometry = new BufferGeometry();
+		dustGeometry.setAttribute(
+			'position',
+			new BufferAttribute(dustPositions, 3),
+		);
+		const dustMaterial = new PointsMaterial({
+			size: 0.07,
+			sizeAttenuation: true,
+			map: glowTexture,
+			color: '#c7d2fe',
+			transparent: true,
+			opacity: 0.55,
+			depthWrite: false,
+			blending: AdditiveBlending,
+		});
+		if (dustCount > 0) cloudGroup.add(new Points(dustGeometry, dustMaterial));
 		scene.add(cloudGroup);
 
 		const group = new Object3D();
@@ -410,6 +458,16 @@ export default function HeroNetworkScene() {
 		resizeObserver.observe(container);
 
 		// --- Paralaje suave con el mouse (barato: dos lerps por frame) ------
+		// Al salir del hero la red sube más lento que la página (paralaje) y
+		// se desvanece, para que el paso a la siguiente sección sea continuo.
+		let scrollProgress = 0;
+		const onScroll = () => {
+			const h = container.parentElement?.clientHeight || window.innerHeight;
+			scrollProgress = Math.min(1, Math.max(0, window.scrollY / h));
+		};
+		if (!prefersReducedMotion) {
+			window.addEventListener('scroll', onScroll, { passive: true });
+		}
 		const pointerTarget = { x: 0, y: 0 };
 		const onPointerMove = (e: PointerEvent) => {
 			pointerTarget.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -501,6 +559,9 @@ export default function HeroNetworkScene() {
 			// mueve rápido.
 			parallaxX += (pointerTarget.x - parallaxX) * 0.04;
 			parallaxY += (pointerTarget.y - parallaxY) * 0.04;
+			group.position.y = scrollProgress * 1.4;
+			cloudGroup.position.y = scrollProgress * 0.6;
+			container.style.opacity = String(1 - scrollProgress * 0.85);
 			group.rotation.y = autoRotationY + parallaxX * 0.15;
 			group.rotation.x = 0.15 + parallaxY * 0.12;
 
@@ -515,8 +576,11 @@ export default function HeroNetworkScene() {
 			// necesitar un shader por-vértice.
 			const breathe = Math.sin(elapsed * 0.8) * 0.5 + 0.5;
 			coreMaterial.opacity = (0.75 + breathe * 0.15) * shape.opacityScale;
-			haloMaterial.opacity = (0.24 + breathe * 0.12) * shape.opacityScale;
-			cloudMaterial.opacity = 0.19 + Math.sin(elapsed * 0.3 + 2) * 0.04;
+			haloMaterial.opacity =
+				(0.24 + breathe * 0.12) * shape.opacityScale * (dark ? 0.8 : 1);
+			cloudMaterial.opacity = dark
+				? 0.13 + Math.sin(elapsed * 0.3 + 2) * 0.03
+				: 0.19 + Math.sin(elapsed * 0.3 + 2) * 0.04;
 
 			if (!prefersReducedMotion) {
 				updatePulses(delta);
@@ -569,6 +633,7 @@ export default function HeroNetworkScene() {
 			intersectionObserver.disconnect();
 			document.removeEventListener('visibilitychange', onVisibilityChange);
 			window.removeEventListener('pointermove', onPointerMove);
+			window.removeEventListener('scroll', onScroll);
 			nodeGeometry.dispose();
 			haloMaterial.dispose();
 			coreMaterial.dispose();
@@ -580,16 +645,19 @@ export default function HeroNetworkScene() {
 			cloudGeometry.dispose();
 			cloudMaterial.dispose();
 			cloudTexture.dispose();
+			dustGeometry.dispose();
+			dustMaterial.dispose();
 			renderer.dispose();
 			container.removeChild(renderer.domElement);
 		};
-	}, []);
+	}, [dark]);
 
 	return (
 		<div
 			ref={containerRef}
 			aria-hidden='true'
-			className='pointer-events-none absolute inset-0'
+			className='pointer-events-none absolute inset-0 transition-opacity duration-1000'
+			style={{ opacity: 0 }}
 		/>
 	);
 }

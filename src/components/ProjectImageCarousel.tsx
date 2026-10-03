@@ -26,23 +26,38 @@ export default function ProjectImageCarousel({
 		return () => clearInterval(id);
 	}, [slides, paused]);
 
+	// Fondo "ambiental": la propia imagen, muy difuminada, detrás de la
+	// imagen nítida. Sustituye al gris plano que se veía en los bordes cuando
+	// la proporción no coincidía. El blur se rasteriza una vez (es estático).
+	const ambient = (url: string) => (
+		<div
+			aria-hidden='true'
+			className='absolute inset-0 scale-110 bg-cover bg-center opacity-25 blur-lg'
+			style={{ backgroundImage: 'url("' + url + '")' }}
+		/>
+	);
+
 	if (!slides) {
 		return (
-			<img
-				src={fallbackUrl}
-				alt={title}
-				loading='lazy'
-				className='aspect-[1200/630] w-full bg-neutral-900 object-contain'
-			/>
+			<div className='relative aspect-[1200/630] w-full overflow-hidden bg-slate-100'>
+				{ambient(fallbackUrl)}
+				<img
+					src={fallbackUrl}
+					alt={title}
+					loading='lazy'
+					className='relative h-full w-full object-contain'
+				/>
+			</div>
 		);
 	}
 
 	return (
 		<div
-			className='relative aspect-[1200/630] w-full overflow-hidden bg-neutral-900'
+			className='relative aspect-[1200/630] w-full overflow-hidden bg-slate-100'
 			onMouseEnter={() => setPaused(true)}
 			onMouseLeave={() => setPaused(false)}
 		>
+			{ambient(slides[index].url)}
 			{slides.map((img, i) => (
 				<img
 					key={img.url}

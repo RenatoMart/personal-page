@@ -1,10 +1,8 @@
 'use client';
-import { Github } from '@/components/Icons';
-import ProjectImageCarousel from '@/components/ProjectImageCarousel';
+import ProjectCard from '@/components/ProjectCard';
 import type { PreviewProject } from '@/lib/preview-api';
 import { cn } from '@/utils/cn';
 import { animate, stagger } from 'animejs';
-import { ExternalLink } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export default function ProjectsSection({
@@ -28,11 +26,12 @@ export default function ProjectsSection({
 			entries => {
 				if (entries[0].isIntersecting) {
 					animate('.proj-card', {
-						translateY: [40, 0],
+						translateY: [28, 0],
+						scale: [0.97, 1],
 						opacity: [0, 1],
-						duration: 400,
-						delay: stagger(60),
-						ease: 'outExpo',
+						duration: 700,
+						delay: stagger(80),
+						ease: 'outQuart',
 					});
 					observer.disconnect();
 				}
@@ -54,10 +53,10 @@ export default function ProjectsSection({
 	}, [active]);
 
 	return (
-		<section id='projects' ref={sectionRef} className='px-6 py-28'>
+		<section id='projects' ref={sectionRef} className='section-flow px-6 py-28'>
 			<div className='mx-auto max-w-6xl'>
 				{/* Header */}
-				<div className='mb-12'>
+				<div data-reveal-group className='mb-12'>
 					<p className='section-eyebrow mb-3'>Portafolio</p>
 					<div className='flex flex-col justify-between gap-6 md:flex-row md:items-end'>
 						<h2 className='font-display text-3xl font-bold text-foreground md:text-5xl'>
@@ -82,80 +81,21 @@ export default function ProjectsSection({
 					</div>
 				</div>
 
+				{projects.length === 0 && (
+					<p className='rounded-2xl border border-dashed border-border px-6 py-12 text-center text-sm text-muted'>
+						No se pudieron cargar los proyectos en este momento. Recarga la
+						página en unos segundos.
+					</p>
+				)}
+
 				{/* Grid */}
 				<div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
 					{filtered.map(project => (
-						<div
+						<ProjectCard
 							key={project.slug}
-							className='proj-card glass-card group flex flex-col overflow-hidden opacity-0'
-						>
-							<ProjectImageCarousel
-								images={project.images}
-								fallbackUrl={project.previewUrl}
-								title={project.title}
-							/>
-							<div className='flex flex-1 flex-col p-8'>
-								<div className='mb-4 flex items-center justify-between'>
-									<span
-										className='pill border text-xs'
-										style={{
-											color: project.accent,
-											backgroundColor: `${project.accent}1a`,
-											borderColor: `${project.accent}40`,
-										}}
-									>
-										{project.category}
-									</span>
-								</div>
-								<h3 className='mb-3 font-display text-xl font-bold text-foreground transition-colors group-hover:text-primary'>
-									{project.liveUrl ? (
-										<a
-											href={project.liveUrl}
-											target='_blank'
-											rel='noreferrer'
-											className='hover:underline'
-										>
-											{project.title}
-										</a>
-									) : (
-										project.title
-									)}
-								</h3>
-								<p className='mb-6 flex-1 text-sm leading-relaxed text-muted'>
-									{project.description}
-								</p>
-								<div className='mb-6 flex flex-wrap gap-2'>
-									{project.tags.map(tag => (
-										<span
-											key={tag}
-											className='pill border border-border bg-surface text-xs text-muted'
-										>
-											{tag}
-										</span>
-									))}
-								</div>
-								<div className='flex items-center gap-4 border-t border-border pt-4'>
-									<a
-										href={project.repoUrl}
-										target='_blank'
-										rel='noreferrer'
-										className='flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-primary'
-									>
-										<Github className='h-4 w-4' /> GitHub
-									</a>
-									{project.liveUrl && (
-										<a
-											href={project.liveUrl}
-											target='_blank'
-											rel='noreferrer'
-											className='flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-primary'
-										>
-											<ExternalLink className='h-4 w-4' /> Demo
-										</a>
-									)}
-								</div>
-							</div>
-						</div>
+							project={project}
+							entranceClass='proj-card'
+						/>
 					))}
 				</div>
 			</div>

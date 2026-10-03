@@ -14,9 +14,14 @@ const navLinks = [
 	{ label: 'Proyectos', href: '/proyectos' },
 ];
 
-export default function Navbar() {
+export default function Navbar({
+	onDarkHero = false,
+}: {
+	onDarkHero?: boolean;
+}) {
 	const navRef = useRef<HTMLElement>(null);
 	const [scrolled, setScrolled] = useState(false);
+	const light = onDarkHero && !scrolled;
 	const [open, setOpen] = useState(false);
 	const pathname = usePathname();
 
@@ -69,7 +74,12 @@ export default function Navbar() {
 					<span className='flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary font-display text-sm font-bold text-white shadow-glow-primary'>
 						RM
 					</span>
-					<span className='hidden font-display font-semibold text-foreground sm:block'>
+					<span
+						className={cn(
+							'hidden font-display font-semibold transition-colors sm:block',
+							light ? 'text-white' : 'text-foreground',
+						)}
+					>
 						Renato Martinez
 					</span>
 				</Link>
@@ -93,7 +103,9 @@ export default function Navbar() {
 										'rounded-lg px-4 py-2 text-sm font-medium transition-all',
 										isActive
 											? 'bg-primary-light text-primary'
-											: 'text-muted hover:bg-primary-light hover:text-foreground',
+											: light
+												? 'text-slate-300 hover:bg-white/10 hover:text-white'
+												: 'text-muted hover:bg-primary-light hover:text-foreground',
 									)}
 								>
 									{label}
@@ -109,7 +121,12 @@ export default function Navbar() {
 						href='https://github.com/RenatoMart'
 						target='_blank'
 						rel='noreferrer'
-						className='flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted transition-all hover:border-primary hover:text-primary'
+						className={cn(
+							'flex h-9 w-9 items-center justify-center rounded-lg border transition-colors hover:border-primary hover:text-primary',
+							light
+								? 'border-white/15 text-slate-300'
+								: 'border-border text-muted',
+						)}
 					>
 						<Github className='h-4 w-4' />
 					</a>
@@ -117,7 +134,12 @@ export default function Navbar() {
 						href='https://www.linkedin.com/in/renato-alexander-martinez-aguilar-88a391343/'
 						target='_blank'
 						rel='noreferrer'
-						className='flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted transition-all hover:border-primary hover:text-primary'
+						className={cn(
+							'flex h-9 w-9 items-center justify-center rounded-lg border transition-colors hover:border-primary hover:text-primary',
+							light
+								? 'border-white/15 text-slate-300'
+								: 'border-border text-muted',
+						)}
 					>
 						<Linkedin className='h-4 w-4' />
 					</a>
@@ -126,7 +148,12 @@ export default function Navbar() {
 				{/* Mobile menu button */}
 				<button
 					onClick={() => setOpen(!open)}
-					className='rounded-lg border border-border p-2 text-muted md:hidden'
+					className={cn(
+						'rounded-lg border p-2 md:hidden',
+						light
+							? 'border-white/15 text-slate-300'
+							: 'border-border text-muted',
+					)}
 				>
 					{open ? <X className='h-5 w-5' /> : <Menu className='h-5 w-5' />}
 				</button>

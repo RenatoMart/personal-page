@@ -30,6 +30,174 @@
       radial-gradient(ellipse 60% 50% at 80% 110%, rgba(249, 115, 22, 0.07) 0%, transparent 60%);
   }
 
+  /* Fondo con paralaje de scroll: las dos capas fijas se desplazan en
+     sentidos opuestos mientras pasas de una sección a otra. Solo
+     transform sobre capas ya compuestas; navegadores sin scroll-driven
+     animations simplemente las ven quietas. */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: -15% 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(ellipse 45% 35% at 85% 30%, rgba(6, 182, 212, 0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 10% 75%, rgba(139, 92, 246, 0.06) 0%, transparent 70%);
+  }
+  body::before { inset: -15% 0; }
+
+  @keyframes bg-shift-a { to { transform: translate3d(0, -9%, 0); } }
+  @keyframes bg-shift-b { to { transform: translate3d(0, 9%, 0); } }
+  @keyframes progress-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+  @supports (animation-timeline: scroll()) {
+    body::before { animation: bg-shift-a linear both; animation-timeline: scroll(root); }
+    body::after { animation: bg-shift-b linear both; animation-timeline: scroll(root); }
+    .scroll-progress { display: block; animation: progress-grow linear both; animation-timeline: scroll(root); }
+  }
+
+  .scroll-progress {
+    display: none;
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: 2px;
+    z-index: 60;
+    transform-origin: 0 50%;
+    background: linear-gradient(90deg, #6366F1, #8B5CF6, #06B6D4, #F97316);
+    pointer-events: none;
+  }
+
+  /* Entrada de encabezados y separadores. Opacity + translateY + blur, 700ms. */
+  [data-reveal],
+  [data-reveal-group] > *,
+  [data-reveal-stagger] > * {
+    transition:
+      opacity 0.7s cubic-bezier(0.2, 0, 0, 1),
+      transform 0.7s cubic-bezier(0.2, 0, 0, 1),
+      filter 0.7s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .reveal-ready [data-reveal]:not(.is-in),
+  .reveal-ready [data-reveal-group]:not(.is-in) > *,
+  .reveal-ready [data-reveal-stagger]:not(.is-in) > * {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+    filter: blur(6px);
+  }
+  [data-reveal-stagger].is-in > * { transition-delay: calc(var(--i, 0) * 60ms); }
+  [data-reveal-group].is-in > :nth-child(2) { transition-delay: 90ms; }
+  [data-reveal-group].is-in > :nth-child(3) { transition-delay: 180ms; }
+  [data-reveal-group].is-in > :nth-child(4) { transition-delay: 270ms; }
+
+  /* Paso de una sección a otra: la sección entra (opacity + translateY)
+     mientras sube por el viewport y, al salir por arriba, cede con un
+     gesto más corto — las salidas pesan menos que las entradas. Va atada
+     a la posición de scroll (reversible, sin timers) y solo anima
+     transform/opacity. Sin soporte, queda el reveal por IntersectionObserver. */
+  @keyframes section-in {
+    from { opacity: 0; transform: translate3d(0, 40px, 0); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+  @keyframes section-out {
+    to { opacity: 0.55; transform: translate3d(0, -18px, 0); }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      /* Entrada: solo el primer 30% de la sección al aparecer (una sección
+         ya visible al cargar, como en /proyectos, queda intacta). Salida:
+         solo el tramo final, y más corta que la entrada. */
+      .section-flow {
+        animation:
+          section-in linear both,
+          section-out linear forwards;
+        animation-timeline: view(), view();
+        animation-range: entry 0% entry 30%, exit 55% exit 100%;
+      }
+    }
+  }
+
+  /* ---- Puente de nebulosa bajo el hero ---- */
+  .bridge-mask {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 16%, black 26%, transparent 78%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 16%, black 26%, transparent 78%);
+  }
+  .bridge-dust {
+    height: 1040px;
+    opacity: 0.55;
+  }
+  .bridge-dust-a {
+    background-image:
+      radial-gradient(1.2px 1.2px at 20px 30px, #fff, transparent),
+      radial-gradient(1px 1px at 90px 120px, #c7d2fe, transparent),
+      radial-gradient(1.4px 1.4px at 170px 210px, #fff, transparent),
+      radial-gradient(1px 1px at 230px 70px, #a5b4fc, transparent);
+    background-size: 260px 260px;
+    animation: dust-fall 46s linear infinite;
+  }
+  .bridge-dust-b {
+    background-image:
+      radial-gradient(1px 1px at 60px 40px, #e0e7ff, transparent),
+      radial-gradient(1.6px 1.6px at 150px 150px, #fff, transparent),
+      radial-gradient(1px 1px at 40px 220px, #a5b4fc, transparent);
+    background-size: 390px 390px;
+    animation: dust-fall 78s linear infinite;
+    opacity: 0.4;
+  }
+  @keyframes dust-fall {
+    from { transform: translate3d(0, -50%, 0); }
+    to   { transform: translate3d(0, 0, 0); }
+  }
+  .bridge-pulse {
+    background: linear-gradient(to bottom, transparent, rgba(199, 210, 254, 0.95), transparent);
+    animation: bridge-pulse 6s linear infinite;
+  }
+  @keyframes bridge-pulse {
+    from { transform: translate3d(0, -100%, 0); }
+    to   { transform: translate3d(0, 620px, 0); }
+  }
+  [data-offscreen='true'] .bridge-anim {
+    animation-play-state: paused;
+  }
+
+  /* El contenido del hero cede con paralaje mientras bajas: baja más
+     lento que la página, se aquieta y se desvanece; el fondo se queda
+     atrás aún más lento. Atado al scroll (reversible), solo transform y
+     opacity. */
+  @keyframes hero-content-out {
+    to { opacity: 0.1; transform: translate3d(0, 70px, 0) scale(0.97); }
+  }
+  @keyframes hero-bg-out {
+    to { transform: translate3d(0, 140px, 0); }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .hero-scroll-out {
+        animation: hero-content-out linear both;
+        animation-timeline: view();
+        animation-range: exit 5% exit 75%;
+      }
+      .hero-scroll-bg {
+        animation: hero-bg-out linear both;
+        animation-timeline: view();
+        animation-range: exit 0% exit 100%;
+      }
+    }
+  }
+
+  /* Paralaje de las capas de código: la más cercana se desplaza más al
+     hacer scroll que la lejana. Solo transform, atado al scroll. */
+  @keyframes drift-par-0 { to { transform: translate3d(0, -4vh, 0); } }
+  @keyframes drift-par-1 { to { transform: translate3d(0, -12vh, 0); } }
+  @keyframes drift-par-2 { to { transform: translate3d(0, -26vh, 0); } }
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      .code-drift-layer { position: absolute; inset: 0; animation: linear both; animation-timeline: scroll(root); }
+      .code-drift-0 { animation-name: drift-par-0; }
+      .code-drift-1 { animation-name: drift-par-1; }
+      .code-drift-2 { animation-name: drift-par-2; }
+    }
+  }
+  .code-drift-layer { position: absolute; inset: 0; }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -49,7 +217,7 @@
 @layer utilities {
   /* Light glassmorphism cards */
   .glass-card {
-    @apply bg-white/80 border border-border rounded-2xl shadow-card transition-[transform,box-shadow] duration-300;
+    @apply bg-white/90 border border-border rounded-2xl shadow-card transition-[transform,box-shadow] duration-300;
   }
   .glass-card:hover {
     @apply shadow-card-hover -translate-y-0.5;

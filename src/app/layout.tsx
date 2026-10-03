@@ -1,3 +1,5 @@
+import GridBackground from '@/components/GridBackground';
+import RevealOnScroll from '@/components/RevealOnScroll';
 import type { Metadata } from 'next';
 import { DM_Sans, JetBrains_Mono, Syne } from 'next/font/google';
 import './globals.css';
@@ -35,8 +37,11 @@ export default function RootLayout({
 		<html lang='es'>
 			<body
 				suppressHydrationWarning
-				className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} antialiased`}
+				className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} relative antialiased`}
 			>
+				<div aria-hidden='true' className='scroll-progress' />
+				<GridBackground />
+				<RevealOnScroll />
 				{children}
 			</body>
 		</html>

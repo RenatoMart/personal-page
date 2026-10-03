@@ -84,11 +84,11 @@ export default function ExperienceSection() {
 		<section
 			id='experience'
 			ref={sectionRef}
-			className='bg-surface-2/50 px-6 py-28'
+			className='section-flow bg-surface-2/50 px-6 py-28'
 		>
 			<div className='mx-auto max-w-5xl'>
 				{/* Header */}
-				<div className='mb-16'>
+				<div data-reveal-group className='mb-16'>
 					<p className='section-eyebrow mb-3'>Trayectoria</p>
 					<div className='flex flex-col justify-between gap-4 md:flex-row md:items-end'>
 						<h2 className='font-display text-3xl font-bold text-foreground md:text-5xl'>

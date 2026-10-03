@@ -1,6 +1,7 @@
 'use client';
 import { Github, Linkedin } from '@/components/Icons';
 import TerminalLine from '@/components/TerminalLine';
+import { cn } from '@/utils/cn';
 import { animate, stagger } from 'animejs';
 import { ArrowRight, Code2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -14,7 +15,20 @@ const HeroNetworkScene = dynamic(() => import('./HeroNetworkScene'), {
 	ssr: false,
 });
 
-export default function HeroSection() {
+const TERMINAL_PHRASES = [
+	'go · typescript · python · nestjs · postgres',
+	'git commit -m "construyendo cosas útiles"',
+	'docker compose up -d  # redis + postgres',
+	'go test ./...  # ok',
+	'npm run build  # compiled successfully',
+];
+
+export default function HeroSection({
+	variant = 'dark',
+}: {
+	variant?: 'light' | 'dark';
+}) {
+	const dark = variant === 'dark';
 	const sectionRef = useRef<HTMLElement>(null);
 	const badgeRef = useRef<HTMLDivElement>(null);
 	const line1Ref = useRef<HTMLDivElement>(null);
@@ -82,35 +96,77 @@ export default function HeroSection() {
 		<section
 			id='about'
 			ref={sectionRef}
-			className='relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-16 pt-24'
+			className={cn(
+				'relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-16 pt-24',
+				dark && 'bg-[#060918]',
+			)}
 		>
-			{/* === Soft large blobs (background layer, using CSS animate-blob for performance) === */}
-			<div
-				className='pointer-events-none absolute -left-16 -top-32 h-[600px] w-[600px] animate-blob rounded-full opacity-35'
-				style={{
-					background:
-						'radial-gradient(circle, #c7d2fe 0%, #e0e7ff 40%, transparent 70%)',
-					animationDelay: '0s',
-				}}
-			/>
-			<div
-				className='pointer-events-none absolute -bottom-32 -right-16 h-[560px] w-[560px] animate-blob rounded-full opacity-30'
-				style={{
-					background:
-						'radial-gradient(circle, #fed7aa 0%, #fde68a 40%, transparent 70%)',
-					animationDelay: '2s',
-				}}
-			/>
+			{dark ? (
+				<>
+					<div
+						aria-hidden='true'
+						className='hero-scroll-bg pointer-events-none absolute inset-0'
+						style={{
+							background:
+								'radial-gradient(ellipse 70% 55% at 50% 38%, rgba(99,102,241,0.22) 0%, transparent 70%), radial-gradient(ellipse 45% 40% at 85% 85%, rgba(6,182,212,0.12) 0%, transparent 70%), radial-gradient(ellipse 40% 40% at 10% 90%, rgba(139,92,246,0.14) 0%, transparent 70%)',
+						}}
+					/>
+					{/* Cuadrícula técnica muy tenue: da textura de "plano" sin animarse */}
+					<div
+						aria-hidden='true'
+						className='hero-scroll-bg pointer-events-none absolute inset-0 opacity-[0.07]'
+						style={{
+							backgroundImage:
+								'linear-gradient(rgba(165,180,252,1) 1px, transparent 1px), linear-gradient(90deg, rgba(165,180,252,1) 1px, transparent 1px)',
+							backgroundSize: '56px 56px',
+							maskImage:
+								'radial-gradient(ellipse 80% 70% at 50% 45%, black 20%, transparent 75%)',
+							WebkitMaskImage:
+								'radial-gradient(ellipse 80% 70% at 50% 45%, black 20%, transparent 75%)',
+						}}
+					/>
+				</>
+			) : (
+				<>
+					<div
+						className='pointer-events-none absolute -left-16 -top-32 h-[600px] w-[600px] animate-blob rounded-full opacity-35'
+						style={{
+							background:
+								'radial-gradient(circle, #c7d2fe 0%, #e0e7ff 40%, transparent 70%)',
+							animationDelay: '0s',
+						}}
+					/>
+					<div
+						className='pointer-events-none absolute -bottom-32 -right-16 h-[560px] w-[560px] animate-blob rounded-full opacity-30'
+						style={{
+							background:
+								'radial-gradient(circle, #fed7aa 0%, #fde68a 40%, transparent 70%)',
+							animationDelay: '2s',
+						}}
+					/>
+				</>
+			)}
 
 			{/* === Red 3D de nodos (capa media) — ambiental, sin interacción === */}
-			<HeroNetworkScene />
+			<HeroNetworkScene variant={variant} />
+			{dark && (
+				<div
+					aria-hidden='true'
+					className='pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-32 bg-gradient-to-b from-transparent to-[#060918]'
+				/>
+			)}
 
 			{/* === Content (top layer) === */}
-			<div className='relative z-10 mx-auto flex max-w-4xl flex-col items-center text-center'>
+			<div className='hero-scroll-out relative z-10 mx-auto flex max-w-4xl flex-col items-center text-center'>
 				{/* Badge */}
 				<div
 					ref={badgeRef}
-					className='mb-10 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white px-4 py-2 font-mono text-xs font-medium text-primary opacity-0 shadow-sm'
+					className={cn(
+						'mb-10 inline-flex items-center gap-2 rounded-full border px-4 py-2 font-mono text-xs font-medium opacity-0 shadow-sm',
+						dark
+							? 'border-white/15 bg-white/5 text-indigo-200'
+							: 'border-primary/25 bg-white text-primary',
+					)}
 				>
 					<Code2 className='h-3.5 w-3.5' />
 					Informática · Desarrollo Web · Voluntariado
@@ -118,14 +174,24 @@ export default function HeroSection() {
 
 				{/* Greeting */}
 				<div ref={line1Ref} className='mb-3 opacity-0'>
-					<span className='font-sans text-2xl font-normal tracking-wide text-muted md:text-3xl'>
+					<span
+						className={cn(
+							'font-sans text-2xl font-normal tracking-wide md:text-3xl',
+							dark ? 'text-slate-300' : 'text-muted',
+						)}
+					>
 						Hola, soy
 					</span>
 				</div>
 
 				{/* Name — each word flips up into place independently (see effect) */}
 				<div className='mb-8'>
-					<h1 className='font-display text-5xl font-bold leading-tight tracking-tight text-foreground md:text-6xl lg:text-7xl'>
+					<h1
+						className={cn(
+							'font-display text-5xl font-bold leading-tight tracking-tight md:text-6xl lg:text-7xl',
+							dark ? 'text-white' : 'text-foreground',
+						)}
+					>
 						<span
 							ref={word1Ref}
 							className='inline-block'
@@ -139,7 +205,10 @@ export default function HeroSection() {
 						</span>{' '}
 						<span
 							ref={word2Ref}
-							className='inline-block text-primary'
+							className={cn(
+								'inline-block',
+								dark ? 'text-indigo-300' : 'text-primary',
+							)}
 							style={{
 								transform: 'perspective(700px) rotateX(78deg)',
 								transformOrigin: '50% 100%',
@@ -154,7 +223,10 @@ export default function HeroSection() {
 				{/* Subtitle */}
 				<p
 					ref={subtitleRef}
-					className='mb-10 max-w-xl text-base leading-relaxed text-muted opacity-0 md:text-lg'
+					className={cn(
+						'mb-10 max-w-xl text-base leading-relaxed opacity-0 md:text-lg',
+						dark ? 'text-slate-300/90' : 'text-muted',
+					)}
 				>
 					Desarrollador Web y Software enfocado en construir soluciones
 					tecnológicas eficientes. Apasionado por el aprendizaje continuo y por
@@ -163,7 +235,7 @@ export default function HeroSection() {
 					trabajo en equipo.
 				</p>
 
-				<TerminalLine text='go · typescript · python · nestjs · postgres' />
+				<TerminalLine dark={dark} phrases={TERMINAL_PHRASES} />
 
 				{/* CTAs */}
 				<div
@@ -182,14 +254,24 @@ export default function HeroSection() {
 					</Link>
 					<Link
 						href='/trayectoria'
-						className='inline-flex items-center gap-2 rounded-full border border-border bg-white px-7 py-3.5 font-semibold text-foreground shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover'
+						className={cn(
+							'inline-flex items-center gap-2 rounded-full border px-7 py-3.5 font-semibold transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-0.5',
+							dark
+								? 'border-white/15 bg-white/5 text-white hover:bg-white/10'
+								: 'border-border bg-white text-foreground shadow-card hover:shadow-card-hover',
+						)}
 					>
 						Mi trayectoria
 					</Link>
 				</div>
 
 				{/* Social links */}
-				<div className='flex items-center gap-5 text-sm text-muted'>
+				<div
+					className={cn(
+						'flex items-center gap-5 text-sm',
+						dark ? 'text-slate-400' : 'text-muted',
+					)}
+				>
 					<a
 						href='https://github.com/RenatoMart'
 						target='_blank'
@@ -198,7 +280,9 @@ export default function HeroSection() {
 					>
 						<Github className='h-4 w-4' /> RenatoMart
 					</a>
-					<span className='h-4 w-px bg-border' />
+					<span
+						className={cn('h-4 w-px', dark ? 'bg-white/15' : 'bg-border')}
+					/>
 					<a
 						href='https://www.linkedin.com/in/renato-alexander-martinez-aguilar-88a391343/'
 						target='_blank'

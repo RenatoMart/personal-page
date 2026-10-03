@@ -123,11 +123,12 @@ export default function SkillsSection() {
 			entries => {
 				if (entries[0].isIntersecting) {
 					animate('.skill-card', {
-						translateY: [40, 0],
+						translateY: [28, 0],
+						scale: [0.97, 1],
 						opacity: [0, 1],
-						duration: 400,
-						delay: stagger(60),
-						ease: 'outExpo',
+						duration: 700,
+						delay: stagger(80),
+						ease: 'outQuart',
 					});
 					observer.disconnect();
 				}
@@ -150,10 +151,13 @@ export default function SkillsSection() {
 	}, []);
 
 	return (
-		<section id='skills' ref={sectionRef} className='px-6 py-28'>
+		<section id='skills' ref={sectionRef} className='section-flow px-6 py-28'>
 			<div className='mx-auto max-w-6xl'>
 				{/* Header */}
-				<div className='mb-16 flex flex-col justify-between gap-4 md:flex-row md:items-end'>
+				<div
+					data-reveal-group
+					className='mb-16 flex flex-col justify-between gap-4 md:flex-row md:items-end'
+				>
 					<div>
 						<p className='section-eyebrow mb-3'>Stack técnico</p>
 						<h2 className='font-display text-3xl font-bold text-foreground md:text-5xl'>

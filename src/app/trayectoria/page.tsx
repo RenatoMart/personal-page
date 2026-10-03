@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function TrayectoriaPage() {
 	return (
-		<main className='min-h-screen bg-background text-foreground selection:bg-primary/30'>
+		<main className='min-h-screen text-foreground selection:bg-primary/30'>
 			<Navbar />
 			<div className='pt-24' />
 			<ExperienceSection />
