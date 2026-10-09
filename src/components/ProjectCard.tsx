@@ -5,7 +5,7 @@ import TechConstellation from '@/components/TechConstellation';
 import { timeAgo, topLanguages } from '@/lib/lang-colors';
 import { hasRealImage, type PreviewProject } from '@/lib/preview-api';
 import { cn } from '@/utils/cn';
-import { ExternalLink, GitCommitHorizontal } from 'lucide-react';
+import { ExternalLink, GitCommitHorizontal, Lock } from 'lucide-react';
 import { useRef } from 'react';
 
 // Tarjeta de proyecto con profundidad: acento de color propio, datos reales
@@ -183,14 +183,23 @@ export default function ProjectCard({
 						))}
 					</div>
 					<div className='flex items-center gap-4 border-t border-border pt-4'>
-						<a
-							href={project.repoUrl}
-							target='_blank'
-							rel='noreferrer'
-							className='flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-primary'
-						>
-							<Github className='h-4 w-4' /> GitHub
-						</a>
+						{project.repoUrl ? (
+							<a
+								href={project.repoUrl}
+								target='_blank'
+								rel='noreferrer'
+								className='flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-primary'
+							>
+								<Github className='h-4 w-4' /> GitHub
+							</a>
+						) : (
+							project.private && (
+								<span className='flex items-center gap-1.5 text-sm font-medium text-muted'>
+									<Lock className='h-4 w-4' /> Uso interno · capturas con datos
+									de demostración
+								</span>
+							)
+						)}
 						{project.liveUrl && (
 							<a
 								href={project.liveUrl}

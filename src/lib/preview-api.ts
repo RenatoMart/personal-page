@@ -1,3 +1,5 @@
+import { privateProjects } from '@/data/private-projects';
+
 export interface PreviewImage {
 	url: string;
 	alt: string;
@@ -18,6 +20,8 @@ export interface PreviewProject {
 	previewUrl: string;
 	previewSource?: 'screenshot' | 'social' | 'readme' | 'card';
 	images?: PreviewImage[];
+	// Proyecto sin repo ni demo públicos (ver src/data/private-projects.ts).
+	private?: boolean;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_PREVIEW_API ?? 'http://localhost:8080';
@@ -39,7 +43,7 @@ export async function getProjects(): Promise<PreviewProject[]> {
 	} catch (err) {
 		// eslint-disable-next-line no-console
 		console.error('[preview-api] no se pudo cargar proyectos:', err);
-		return [];
+		return privateProjects;
 	}
 }
 
@@ -64,7 +68,7 @@ async function fetchProjects(): Promise<PreviewProject[]> {
 	// van primero; los que solo tienen la tarjeta generada, después.
 	// Array.prototype.sort es estable: dentro de cada grupo se respeta el
 	// orden del catálogo.
-	return [...withUrls].sort(
+	return [...privateProjects, ...withUrls].sort(
 		(a, b) => Number(hasRealImage(b)) - Number(hasRealImage(a)),
 	);
 }
