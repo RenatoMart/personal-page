@@ -41,8 +41,15 @@ export async function getProjects(): Promise<PreviewProject[]> {
 	try {
 		return await fetchProjects();
 	} catch (err) {
+		// Es un estado esperado (backend dormido o apagado), no un fallo de la
+		// página: se avisa con warn para que el overlay de errores de Next en
+		// desarrollo no lo muestre como error. Se sigue sirviendo lo local.
+		const reason = err instanceof Error ? err.message : String(err);
 		// eslint-disable-next-line no-console
-		console.error('[preview-api] no se pudo cargar proyectos:', err);
+		console.warn(
+			'[preview-api] backend no disponible, solo proyectos locales:',
+			reason,
+		);
 		return privateProjects;
 	}
 }

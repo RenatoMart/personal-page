@@ -118,7 +118,7 @@ export default function TerminalLine({
 			ref={rootRef}
 			style={{ opacity: 0 }}
 			aria-label={phrases[0]}
-			className={`mb-10 min-h-6 w-full max-w-xs text-center font-mono text-sm leading-relaxed sm:w-[46ch] sm:max-w-none sm:text-left ${dark ? 'text-slate-400' : 'text-muted'}`}
+			className={`mb-6 min-h-6 w-full max-w-xs text-center font-mono text-sm leading-relaxed sm:w-[46ch] sm:max-w-none sm:text-left md:mb-10 ${dark ? 'text-slate-400' : 'text-muted'}`}
 		>
 			<span aria-hidden='true' className='mr-2 text-secondary'>
 				~ $

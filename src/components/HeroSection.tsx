@@ -9,9 +9,12 @@ import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
 // El chunk de three.js (~150KB) se carga aparte, después del contenido
-// principal: la red 3D es puramente ambiental, así que no debe competir
+// principal: la escena 3D es puramente ambiental, así que no debe competir
 // por ancho de banda ni bloquear el hidratado del texto/CTAs del hero.
 const HeroNetworkScene = dynamic(() => import('./HeroNetworkScene'), {
+	ssr: false,
+});
+const HeroCityScene = dynamic(() => import('./HeroCityScene'), {
 	ssr: false,
 });
 
@@ -97,7 +100,7 @@ export default function HeroSection({
 			id='about'
 			ref={sectionRef}
 			className={cn(
-				'relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-16 pt-24',
+				'relative flex min-h-[100svh] items-center justify-center overflow-hidden px-6 pb-10 pt-[4.25rem] md:pb-16 md:pt-24',
 				dark && 'bg-[#060918]',
 			)}
 		>
@@ -108,21 +111,7 @@ export default function HeroSection({
 						className='hero-scroll-bg pointer-events-none absolute inset-0'
 						style={{
 							background:
-								'radial-gradient(ellipse 70% 55% at 50% 38%, rgba(99,102,241,0.22) 0%, transparent 70%), radial-gradient(ellipse 45% 40% at 85% 85%, rgba(6,182,212,0.12) 0%, transparent 70%), radial-gradient(ellipse 40% 40% at 10% 90%, rgba(139,92,246,0.14) 0%, transparent 70%)',
-						}}
-					/>
-					{/* Cuadrícula técnica muy tenue: da textura de "plano" sin animarse */}
-					<div
-						aria-hidden='true'
-						className='hero-scroll-bg pointer-events-none absolute inset-0 opacity-[0.07]'
-						style={{
-							backgroundImage:
-								'linear-gradient(rgba(165,180,252,1) 1px, transparent 1px), linear-gradient(90deg, rgba(165,180,252,1) 1px, transparent 1px)',
-							backgroundSize: '56px 56px',
-							maskImage:
-								'radial-gradient(ellipse 80% 70% at 50% 45%, black 20%, transparent 75%)',
-							WebkitMaskImage:
-								'radial-gradient(ellipse 80% 70% at 50% 45%, black 20%, transparent 75%)',
+								'radial-gradient(ellipse 90% 45% at 50% 0%, rgba(139,92,246,0.22) 0%, transparent 70%), radial-gradient(ellipse 60% 25% at 50% 0%, rgba(249,115,22,0.07) 0%, transparent 70%), radial-gradient(ellipse 45% 35% at 88% 92%, rgba(6,182,212,0.08) 0%, transparent 70%), linear-gradient(to bottom, #120D33 0%, #0C0B28 45%, #080A1E 75%, #060918 100%)',
 						}}
 					/>
 				</>
@@ -147,13 +136,24 @@ export default function HeroSection({
 				</>
 			)}
 
-			{/* === Red 3D de nodos (capa media) — ambiental, sin interacción === */}
-			<HeroNetworkScene variant={variant} />
+			{/* === Fondo 3D (capa media) — ambiental, sin interacción === */}
+			{dark ? <HeroCityScene /> : <HeroNetworkScene variant={variant} />}
 			{dark && (
-				<div
-					aria-hidden='true'
-					className='pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-32 bg-gradient-to-b from-transparent to-[#060918]'
-				/>
+				<>
+					{/* Oscurece el centro para que el texto se lea sobre la ciudad */}
+					<div
+						aria-hidden='true'
+						className='pointer-events-none absolute inset-0 z-[4]'
+						style={{
+							background:
+								'radial-gradient(ellipse 52% 46% at 50% 50%, rgba(8,8,28,0.74) 0%, rgba(8,8,28,0.45) 55%, transparent 100%)',
+						}}
+					/>
+					<div
+						aria-hidden='true'
+						className='pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-32 bg-gradient-to-b from-transparent to-[#060918]'
+					/>
+				</>
 			)}
 
 			{/* === Content (top layer) === */}
@@ -162,7 +162,7 @@ export default function HeroSection({
 				<div
 					ref={badgeRef}
 					className={cn(
-						'mb-10 inline-flex items-center gap-2 rounded-full border px-4 py-2 font-mono text-xs font-medium opacity-0 shadow-sm',
+						'mb-5 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 font-mono text-xs font-medium opacity-0 shadow-sm md:mb-10 md:px-4 md:py-2',
 						dark
 							? 'border-white/15 bg-white/5 text-indigo-200'
 							: 'border-primary/25 bg-white text-primary',
@@ -173,7 +173,7 @@ export default function HeroSection({
 				</div>
 
 				{/* Greeting */}
-				<div ref={line1Ref} className='mb-3 opacity-0'>
+				<div ref={line1Ref} className='mb-1.5 opacity-0 md:mb-3'>
 					<span
 						className={cn(
 							'font-sans text-2xl font-normal tracking-wide md:text-3xl',
@@ -185,10 +185,10 @@ export default function HeroSection({
 				</div>
 
 				{/* Name — each word flips up into place independently (see effect) */}
-				<div className='mb-8'>
+				<div className='mb-5 md:mb-8'>
 					<h1
 						className={cn(
-							'font-display text-5xl font-bold leading-tight tracking-tight md:text-6xl lg:text-7xl',
+							'font-display text-[2rem] font-bold leading-tight tracking-tight min-[380px]:text-4xl sm:text-5xl md:text-6xl lg:text-7xl',
 							dark ? 'text-white' : 'text-foreground',
 						)}
 					>
@@ -224,7 +224,7 @@ export default function HeroSection({
 				<p
 					ref={subtitleRef}
 					className={cn(
-						'mb-10 max-w-xl text-base leading-relaxed opacity-0 md:text-lg',
+						'mb-6 max-w-xl text-base leading-relaxed opacity-0 md:mb-10 md:text-lg',
 						dark ? 'text-slate-300/90' : 'text-muted',
 					)}
 				>
@@ -240,11 +240,11 @@ export default function HeroSection({
 				{/* CTAs */}
 				<div
 					ref={ctaRef}
-					className='mb-10 flex flex-col items-center gap-4 opacity-0 sm:flex-row'
+					className='mb-6 flex flex-row flex-wrap items-center justify-center gap-3 opacity-0 md:mb-10 md:gap-4'
 				>
 					<Link
 						href='/proyectos'
-						className='group inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-semibold text-white shadow-glow-primary transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg'
+						className='group inline-flex items-center gap-2 rounded-full px-5 py-3 text-[15px] font-semibold text-white shadow-glow-primary transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg max-[380px]:px-4 max-[380px]:text-sm md:px-7 md:py-3.5 md:text-base'
 						style={{
 							background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
 						}}
@@ -255,7 +255,7 @@ export default function HeroSection({
 					<Link
 						href='/trayectoria'
 						className={cn(
-							'inline-flex items-center gap-2 rounded-full border px-7 py-3.5 font-semibold transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-0.5',
+							'inline-flex items-center gap-2 rounded-full border px-5 py-3 text-[15px] font-semibold transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-0.5 max-[380px]:px-4 max-[380px]:text-sm md:px-7 md:py-3.5 md:text-base',
 							dark
 								? 'border-white/15 bg-white/5 text-white hover:bg-white/10'
 								: 'border-border bg-white text-foreground shadow-card hover:shadow-card-hover',

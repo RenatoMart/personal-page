@@ -68,7 +68,7 @@ export default function Navbar({
 					: 'bg-transparent',
 			)}
 		>
-			<div className='mx-auto flex max-w-6xl items-center justify-between px-6 py-4 lg:px-10'>
+			<div className='mx-auto flex max-w-6xl items-center justify-between px-6 py-2.5 md:py-4 lg:px-10'>
 				{/* Logo */}
 				<Link href='/' className='flex items-center gap-2.5'>
 					<span className='flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary font-display text-sm font-bold text-white shadow-glow-primary'>
