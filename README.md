@@ -19,11 +19,14 @@ Este repositorio contiene el código fuente de mi página web personal y portafo
 
 La web está construida utilizando herramientas modernas enfocadas en la experiencia de desarrollador y rendimiento:
 
-- **Framework:** [Next.js (App Router)](https://nextjs.org/)
+- **Framework:** [Next.js 15 (App Router)](https://nextjs.org/) con React 19 e ISR para los proyectos.
 - **Lenguaje:** [TypeScript](https://www.typescriptlang.org/)
 - **Estilos:** [Tailwind CSS](https://tailwindcss.com/)
-- **Animaciones:** [Anime.js (v4)](https://animejs.com/) para micro-interacciones y [CSS Keyframes] para animaciones de fondo optimizadas por hardware.
-- **Iconos:** [Lucide React](https://lucide.dev/)
+- **3D:** [Three.js](https://threejs.org/) con shaders GLSL propios: el fondo del inicio es una ciudad isométrica de líneas que se construye y se deshace en bucle, y se pausa cuando no está en pantalla.
+- **Animaciones:** [Anime.js (v4)](https://animejs.com/) para micro-interacciones y CSS (keyframes y animaciones ligadas al scroll) para el resto, optimizadas por hardware y con soporte de `prefers-reduced-motion`.
+- **Iconos:** [Lucide React](https://lucide.dev/) y React Icons
+- **Datos de proyectos:** servicio propio en **Go** ([repo-preview-service](https://github.com/RenatoMart/repo-preview-service), desplegado en Render) que entrega las tarjetas y capturas de los repositorios.
+- **Despliegue:** [Vercel](https://vercel.com/)
 
 *Mis habilidades generales incluyen: React, Vue, C++, Python, SQL (MariaDB, PostgreSQL), Scrum, RUP, y toda la suite de JetBrains (WebStorm, CLion, DataGrip) + VS Code.*
 

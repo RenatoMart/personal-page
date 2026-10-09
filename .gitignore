@@ -46,3 +46,15 @@ next-env.d.ts
 
 # AI Agents & Skills
 .agents/
+
+# Claude Code (configuración y notas locales)
+.claude/
+CLAUDE.md
+
+# capturas, informes y archivos temporales de pruebas locales
+/screenshots/
+/capturas/
+/test-results/
+/playwright-report/
+/design-system/
+*.log
